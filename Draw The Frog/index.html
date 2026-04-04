@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0"/>
+  <title>🐸 Froggy Canvas</title>
+  <link rel="stylesheet" href="style.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet"/>
+</head>
+<body>
+
+  <!-- Floating lily pads decoration -->
+  <div class="bg-deco">
+    <div class="lily lily-1">🍃</div>
+    <div class="lily lily-2">🌿</div>
+    <div class="lily lily-3">🍃</div>
+    <div class="lily lily-4">🌿</div>
+  </div>
+
+  <div class="app-wrapper">
+
+    <!-- Header -->
+    <header class="header">
+      <div class="frog-mascot" id="mascot">🐸</div>
+      <div class="header-text">
+        <h1>Froggy Canvas</h1>
+        <p class="tagline">Ribbit, draw something!</p>
+      </div>
+      <div class="frog-mascot mirrored" id="mascot2">🐸</div>
+      <button class="btn-home" onclick="window.location.href='../index.html'">🏠 Home</button>
+    </header>
+
+    <div class="main-layout">
+
+      <!-- Left Toolbar -->
+      <aside class="toolbar" id="toolbar">
+        <div class="tool-section">
+          <h3 class="section-label">🎨 Color</h3>
+          <div class="color-grid">
+            <button class="color-btn active" style="--c:#2d6a2d" data-color="#2d6a2d" title="Lily Green"></button>
+            <button class="color-btn" style="--c:#5cb85c" data-color="#5cb85c" title="Frog Green"></button>
+            <button class="color-btn" style="--c:#a8e063" data-color="#a8e063" title="Lime"></button>
+            <button class="color-btn" style="--c:#3b7d4c" data-color="#3b7d4c" title="Deep Green"></button>
+            <button class="color-btn" style="--c:#1a5276" data-color="#1a5276" title="Pond Blue"></button>
+            <button class="color-btn" style="--c:#76d7ea" data-color="#76d7ea" title="Sky Blue"></button>
+            <button class="color-btn" style="--c:#f9ca24" data-color="#f9ca24" title="Sun Yellow"></button>
+            <button class="color-btn" style="--c:#f0932b" data-color="#f0932b" title="Firefly Orange"></button>
+            <button class="color-btn" style="--c:#eb4d4b" data-color="#eb4d4b" title="Ladybug Red"></button>
+            <button class="color-btn" style="--c:#8b4513" data-color="#8b4513" title="Log Brown"></button>
+            <button class="color-btn" style="--c:#2c3e50" data-color="#2c3e50" title="Night Dark"></button>
+            <button class="color-btn" style="--c:#ffffff; border: 2px solid #aaa;" data-color="#ffffff" title="White"></button>
+          </div>
+          <div class="custom-color-row">
+            <label for="customColor" class="custom-label">Custom:</label>
+            <input type="color" id="customColor" value="#2d6a2d" title="Pick any color" />
+          </div>
+        </div>
+
+        <div class="tool-section">
+          <h3 class="section-label">🖌️ Tools</h3>
+          <div class="tool-btn-group">
+            <button class="tool-btn active" id="btn-draw" data-tool="draw" title="Draw">
+              <span class="tool-icon">✏️</span><span class="tool-name">Draw</span>
+            </button>
+            <button class="tool-btn" id="btn-eraser" data-tool="eraser" title="Eraser">
+              <span class="tool-icon">🧹</span><span class="tool-name">Erase</span>
+            </button>
+            <button class="tool-btn" id="btn-fill" data-tool="fill" title="Fill bucket">
+              <span class="tool-icon">🪣</span><span class="tool-name">Fill</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="tool-section">
+          <h3 class="section-label">📏 Brush Size</h3>
+          <div class="brush-sizes">
+            <button class="size-btn" data-size="3" title="Tiny">●</button>
+            <button class="size-btn active" data-size="8" title="Small">●</button>
+            <button class="size-btn" data-size="16" title="Medium">●</button>
+            <button class="size-btn" data-size="28" title="Large">●</button>
+            <button class="size-btn" data-size="50" title="Huge">●</button>
+          </div>
+          <div class="slider-row">
+            <input type="range" id="brushSlider" min="1" max="80" value="8" />
+            <span id="brushLabel" class="brush-label">8px</span>
+          </div>
+        </div>
+
+        <div class="tool-section">
+          <h3 class="section-label">💡 Opacity</h3>
+          <div class="slider-row">
+            <input type="range" id="opacitySlider" min="10" max="100" value="100" />
+            <span id="opacityLabel" class="brush-label">100%</span>
+          </div>
+        </div>
+
+        <div class="tool-section stamps-section">
+          <h3 class="section-label">🐸 Stamps</h3>
+          <div class="stamp-grid">
+            <button class="stamp-btn" data-stamp="🐸">🐸</button>
+            <button class="stamp-btn" data-stamp="🌿">🌿</button>
+            <button class="stamp-btn" data-stamp="🌸">🌸</button>
+            <button class="stamp-btn" data-stamp="🦋">🦋</button>
+            <button class="stamp-btn" data-stamp="🌙">🌙</button>
+            <button class="stamp-btn" data-stamp="⭐">⭐</button>
+            <button class="stamp-btn" data-stamp="🍄">🍄</button>
+            <button class="stamp-btn" data-stamp="🐛">🐛</button>
+          </div>
+        </div>
+      </aside>
+
+      <!-- Canvas Area -->
+      <div class="canvas-wrapper">
+        <div class="canvas-frame">
+          <canvas id="drawCanvas"></canvas>
+          <div class="canvas-hint" id="canvasHint">Click & drag to start drawing! 🐸</div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="action-bar">
+          <button class="action-btn undo-btn" id="undoBtn" title="Undo (Ctrl+Z)">
+            ↩️ Undo
+          </button>
+          <button class="action-btn redo-btn" id="redoBtn" title="Redo (Ctrl+Y)">
+            ↪️ Redo
+          </button>
+          <button class="action-btn clear-btn" id="clearBtn" title="Clear canvas">
+            🗑️ Clear
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Toast notification -->
+  <div class="toast" id="toast"></div>
+
+  <script src="script.js"></script>
+</body>
+</html>

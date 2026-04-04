@@ -1,0 +1,237 @@
+@import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;700;900&display=swap');
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  
+  /* Disable selection and dragging */
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-user-drag: none;
+  -webkit-touch-callout: none;
+  
+  /* Disable tap highlight */
+  -webkit-tap-highlight-color: transparent;
+}
+
+img {
+  -webkit-user-drag: none;
+  user-select: none;
+}
+
+#btn-left, #btn-right, #btn-jump, .play-btn {
+  pointer-events: all;
+}
+
+body {
+  background: #0a1a0a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  font-family: 'Nunito', sans-serif;
+  touch-action: manipulation;
+}
+
+#game-wrap {
+  position: relative;
+  width: 480px;
+  background: linear-gradient(180deg, #1a3a1a 0%, #0d2b0d 100%);
+  border-radius: 16px;
+  overflow: hidden;
+  user-select: none;
+  border: 2px solid #2a5a2a;
+}
+
+#canvas {
+  display: block;
+  width: 100%;
+  cursor: pointer;
+}
+
+/* ── HUD overlay ── */
+#ui-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  padding: 12px 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  pointer-events: none;
+}
+
+.score-box {
+  background: rgba(0, 0, 0, 0.45);
+  border-radius: 10px;
+  padding: 6px 14px;
+  font-family: 'Fredoka One', cursive;
+  font-size: 22px;
+  color: #ffe066;
+  letter-spacing: 1px;
+  border: 1.5px solid rgba(255, 224, 102, 0.3);
+}
+
+.lives-box {
+  background: rgba(0, 0, 0, 0.45);
+  border-radius: 10px;
+  padding: 6px 12px;
+  font-size: 18px;
+  border: 1.5px solid rgba(255, 255, 255, 0.15);
+}
+
+/* ── Screen overlays (menu / game-over) ── */
+#screen-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(10, 30, 10, 0.88);
+  border-radius: 14px;
+}
+
+#screen-overlay.hidden {
+  display: none;
+}
+
+.big-title {
+  font-family: 'Fredoka One', cursive;
+  font-size: 52px;
+  color: #ffe066;
+  text-shadow: 0 4px 0 #a07000, 0 0 40px rgba(255, 224, 102, 0.3);
+  line-height: 1;
+  margin-bottom: 6px;
+}
+
+.sub-title {
+  font-size: 16px;
+  color: #8be08b;
+  margin-bottom: 28px;
+  letter-spacing: 2px;
+  font-weight: 700;
+}
+
+.play-btn {
+  font-family: 'Fredoka One', cursive;
+  font-size: 26px;
+  background: linear-gradient(135deg, #5eda5e, #2aa82a);
+  color: #fff;
+  border: none;
+  border-radius: 50px;
+  padding: 14px 48px;
+  cursor: pointer;
+  box-shadow: 0 6px 0 #1a7a1a, 0 0 30px rgba(94, 218, 94, 0.4);
+  transition: transform 0.1s, box-shadow 0.1s;
+  letter-spacing: 1px;
+  pointer-events: all;
+}
+
+.play-btn:active {
+  transform: translateY(3px);
+  box-shadow: 0 3px 0 #1a7a1a;
+}
+
+.btn-home {
+  font-family: 'Fredoka One', cursive;
+  font-size: 14px;
+  background: transparent;
+  color: rgba(107,184,107,0.6);
+  border: 2px solid rgba(74,138,74,0.3);
+  border-radius: 50px;
+  padding: 8px 26px;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+  pointer-events: all;
+  letter-spacing: 1px;
+}
+.btn-home:hover {
+  color: #6bb86b;
+  border-color: rgba(74,138,74,0.6);
+}
+.btn-home:active { transform: scale(0.95); }
+
+.hi-score {
+  font-size: 14px;
+  color: #6bb86b;
+  margin-top: 16px;
+  font-weight: 700;
+}
+
+.controls-hint {
+  font-size: 12px;
+  color: #4a8a4a;
+  margin-top: 24px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 8px;
+  padding: 8px 14px;
+  text-align: center;
+  border: 1px solid rgba(74, 138, 74, 0.3);
+}
+
+/* ── Combo floating text ── */
+#combo-text {
+  position: absolute;
+  top: 60px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: 'Fredoka One', cursive;
+  font-size: 20px;
+  color: #ffe066;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s;
+  white-space: nowrap;
+}
+
+/* ── Mobile buttons ── */
+#mobile-btns {
+  position: absolute;
+  bottom: 12px;
+  left: 0;
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  padding: 0 16px;
+  pointer-events: none;
+}
+
+.m-btn {
+  pointer-events: all;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1.5px solid rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  width: 52px;
+  height: 52px;
+  font-size: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: rgba(255, 255, 255, 0.8);
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.1s;
+}
+
+.m-btn:active {
+  background: rgba(0, 0, 0, 0.7);
+}
+
+#btn-jump {
+  width: 64px;
+  height: 64px;
+  font-size: 26px;
+}
+
+/* ── Responsive ── */
+@media (max-width: 500px) {
+  #game-wrap {
+    width: 100vw;
+    border-radius: 0;
+    border-left: none;
+    border-right: none;
+  }
+}

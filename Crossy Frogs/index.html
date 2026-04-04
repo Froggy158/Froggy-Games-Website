@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, shrink-to-fit=no" />
+  <title>🐸 Crossy Frogs</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- ── Header ── -->
+  <div id="ui-header">
+    <h1>🐸 Crossy Frogs</h1>
+    <div id="score-panel">
+      <div class="score-box">
+        <div class="score-label">Score</div>
+        <div class="score-value" id="score">0</div>
+      </div>
+      <div class="score-box">
+        <div class="score-label">Best</div>
+        <div class="score-value" id="best">0</div>
+      </div>
+    </div>
+    <button class="btn-home-hud" onclick="window.location.href='../index.html'">🏠</button>
+  </div>
+
+  <!-- ── Game canvas ── -->
+  <div id="canvas-wrap">
+    <canvas id="gameCanvas"></canvas>
+
+    <!-- Start / Game-over overlay -->
+    <div id="overlay">
+      <h2 id="overlay-title">🐸 Crossy Frogs</h2>
+      <p  id="overlay-msg"  class="subtitle">Hop across roads &amp; rivers<br>without getting squished or wet!</p>
+      <p  id="final-score"  class="final-score" style="display:none"></p>
+      <button id="start-btn">🐸 Start Hopping!</button>
+      <button class="btn-home" onclick="window.location.href='../index.html'">🏠 Home</button>
+      <p class="subtitle" style="font-size:0.78rem;margin-top:4px;">
+        ⬆⬇⬅➡ arrow keys &nbsp;·&nbsp; WASD &nbsp;·&nbsp; or D-pad below
+      </p>
+    </div>
+  </div>
+
+  <!-- ── Mobile D-pad ── -->
+  <div id="dpad">
+    <button class="dpad-btn" id="btn-up">▲</button>
+    <button class="dpad-btn" id="btn-left">◀</button>
+    <button class="dpad-btn" id="btn-right">▶</button>
+    <button class="dpad-btn" id="btn-down">▼</button>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>

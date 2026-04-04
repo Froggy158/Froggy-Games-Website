@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Frog World</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after {
+      box-sizing: border-box;
+      -webkit-user-select: none;
+      user-select: none;
+      -webkit-user-drag: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    :root {
+      --green-deep: #1a5c2a;
+      --green-mid: #2d8a47;
+      --green-light: #4caf50;
+      --green-pale: #c8f0ce;
+      --green-mint: #e8f8eb;
+      --yellow: #f9e44a;
+      --yellow-dark: #e6c800;
+      --cream: #fffdf0;
+      --text-dark: #132e18;
+      --text-mid: #2d5a35;
+      --text-soft: #6a9470;
+      --card-bg: rgba(255,255,255,0.92);
+      --shadow-sm: 0 4px 14px rgba(26,92,42,0.10);
+      --shadow-md: 0 10px 30px rgba(26,92,42,0.15);
+      --shadow-lg: 0 20px 50px rgba(26,92,42,0.22);
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+    }
+
+    body {
+      background: var(--green-mint);
+      font-family: 'Nunito', sans-serif;
+      color: var(--text-dark);
+      overflow-x: hidden;
+      position: relative;
+    }
+
+    /* ---- Animated pond background ---- */
+    .bg-scene {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      overflow: hidden;
+      pointer-events: none;
+    }
+
+    .bg-gradient {
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 80% 60% at 50% 110%, #a8e6b0 0%, transparent 60%),
+        radial-gradient(ellipse 60% 40% at 20% -10%, #d4f5d8 0%, transparent 50%),
+        radial-gradient(ellipse 50% 50% at 80% 5%, #c2efc9 0%, transparent 50%),
+        linear-gradient(170deg, #e8f8eb 0%, #d0f0d6 40%, #b8e8c0 100%);
+    }
+
+    /* Lily pads */
+    .lily {
+      position: absolute;
+      border-radius: 50%;
+      opacity: 0.18;
+      animation: floatLily 8s ease-in-out infinite;
+    }
+    .lily-1 { width: 180px; height: 180px; background: #2d8a47; bottom: 8%; left: -4%; animation-delay: 0s; }
+    .lily-2 { width: 120px; height: 120px; background: #1a5c2a; bottom: 15%; right: 5%; animation-delay: -3s; }
+    .lily-3 { width: 90px;  height: 90px;  background: #4caf50; bottom: 3%;  left: 30%; animation-delay: -5s; }
+    .lily-4 { width: 60px;  height: 60px;  background: #2d8a47; top: 10%;   right: 12%; animation-delay: -1.5s; }
+    .lily-5 { width: 200px; height: 200px; background: #1a5c2a; top: -5%;   left: 10%; animation-delay: -4s; }
+
+    @keyframes floatLily {
+      0%, 100% { transform: translateY(0px) scale(1); }
+      50%       { transform: translateY(-14px) scale(1.04); }
+    }
+
+    /* Floating bubbles */
+    .bubble {
+      position: absolute;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.35);
+      border: 1.5px solid rgba(255,255,255,0.55);
+      animation: riseBubble linear infinite;
+    }
+    .b1  { width:14px; height:14px; left:8%;   bottom:-10%; animation-duration:9s;  animation-delay:0s;   }
+    .b2  { width:8px;  height:8px;  left:18%;  bottom:-10%; animation-duration:12s; animation-delay:-3s;  }
+    .b3  { width:18px; height:18px; left:35%;  bottom:-10%; animation-duration:10s; animation-delay:-6s;  }
+    .b4  { width:10px; height:10px; left:55%;  bottom:-10%; animation-duration:14s; animation-delay:-1s;  }
+    .b5  { width:7px;  height:7px;  left:70%;  bottom:-10%; animation-duration:8s;  animation-delay:-5s;  }
+    .b6  { width:20px; height:20px; left:85%;  bottom:-10%; animation-duration:11s; animation-delay:-2s;  }
+    .b7  { width:12px; height:12px; left:92%;  bottom:-10%; animation-duration:13s; animation-delay:-8s;  }
+    .b8  { width:9px;  height:9px;  left:45%;  bottom:-10%; animation-duration:7s;  animation-delay:-4s;  }
+
+    @keyframes riseBubble {
+      0%   { transform: translateY(0) translateX(0);   opacity: 0;   }
+      10%  { opacity: 0.7; }
+      90%  { opacity: 0.4; }
+      100% { transform: translateY(-110vh) translateX(20px); opacity: 0; }
+    }
+
+    /* ---- Layout ---- */
+    .page-wrap {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 48px 20px 60px;
+      min-height: 100vh;
+    }
+
+    /* ---- Header ---- */
+    .header {
+      text-align: center;
+      margin-bottom: 48px;
+      animation: fadeDown 0.7s ease both;
+    }
+
+    .frog-emoji {
+      font-size: 4rem;
+      display: block;
+      margin-bottom: 6px;
+      animation: bounce 2.4s ease-in-out infinite;
+      filter: drop-shadow(0 6px 12px rgba(26,92,42,0.25));
+    }
+
+    @keyframes bounce {
+      0%, 100% { transform: translateY(0) rotate(-3deg); }
+      45%       { transform: translateY(-16px) rotate(3deg); }
+    }
+
+    h1 {
+      font-family: 'Fredoka One', cursive;
+      font-size: clamp(2.8rem, 8vw, 5rem);
+      margin: 0 0 8px;
+      color: var(--green-deep);
+      letter-spacing: 1px;
+      text-shadow: 0 4px 0 rgba(26,92,42,0.12), 0 2px 12px rgba(26,92,42,0.10);
+      line-height: 1;
+    }
+
+    .tagline {
+      font-size: 1.05rem;
+      color: var(--text-soft);
+      font-weight: 600;
+      letter-spacing: 0.5px;
+    }
+
+    /* ---- Grid ---- */
+    .games-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+      gap: 22px;
+      width: 100%;
+      max-width: 980px;
+    }
+
+    /* ---- Card ---- */
+    .game-card {
+      display: flex;
+      flex-direction: column;
+      background: var(--card-bg);
+      border-radius: 24px;
+      text-decoration: none;
+      color: inherit;
+      overflow: hidden;
+      box-shadow: var(--shadow-sm);
+      border: 2px solid rgba(255,255,255,0.9);
+      transition: transform 0.32s cubic-bezier(0.175,0.885,0.32,1.275),
+                  box-shadow 0.32s ease,
+                  border-color 0.2s;
+      animation: fadeUp 0.6s ease both;
+      position: relative;
+    }
+
+    .game-card:nth-child(1) { animation-delay: 0.10s; }
+    .game-card:nth-child(2) { animation-delay: 0.18s; }
+    .game-card:nth-child(3) { animation-delay: 0.26s; }
+    .game-card:nth-child(4) { animation-delay: 0.34s; }
+    .game-card:nth-child(5) { animation-delay: 0.42s; }
+    .game-card:nth-child(6) { animation-delay: 0.50s; }
+    .game-card:nth-child(7) { animation-delay: 0.58s; }
+    .game-card:nth-child(8) { animation-delay: 0.66s; }
+    .game-card:nth-child(9)  { animation-delay: 0.74s; }
+    .game-card:nth-child(10) { animation-delay: 0.82s; }
+
+    /* Thumbnail area */
+    .card-thumb {
+      width: 100%;
+      aspect-ratio: 16 / 10;
+      overflow: hidden;
+      background: linear-gradient(135deg, var(--green-pale), var(--green-mint));
+      position: relative;
+    }
+
+    .card-thumb img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      transition: transform 0.4s ease;
+    }
+
+
+    /* Shine overlay */
+    .card-thumb::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(160deg, rgba(255,255,255,0.18) 0%, transparent 60%);
+      pointer-events: none;
+    }
+
+    /* Card body */
+    .card-body {
+      padding: 18px 20px 20px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .card-text {
+      flex: 1;
+    }
+
+    .game-title {
+      font-family: 'Fredoka One', cursive;
+      font-size: 1.25rem;
+      color: var(--text-dark);
+      letter-spacing: 0.3px;
+      line-height: 1.2;
+      margin-bottom: 3px;
+    }
+
+    .game-desc {
+      font-size: 0.82rem;
+      color: var(--text-soft);
+      font-weight: 600;
+    }
+
+    /* Play button */
+    .play-btn {
+      flex-shrink: 0;
+      width: 46px;
+      height: 46px;
+      border-radius: 50%;
+      background: linear-gradient(145deg, var(--green-light), var(--green-mid));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 12px rgba(44,138,71,0.35), inset 0 1px 0 rgba(255,255,255,0.3);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+
+    .play-btn svg {
+      width: 18px;
+      height: 18px;
+      fill: white;
+      margin-left: 2px;
+    }
+
+    /* Badge */
+    .badge {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      background: var(--yellow);
+      color: var(--green-deep);
+      font-family: 'Fredoka One', cursive;
+      font-size: 0.7rem;
+      letter-spacing: 0.5px;
+      padding: 3px 10px;
+      border-radius: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+      text-transform: uppercase;
+    }
+
+    /* ---- Footer ---- */
+    .footer {
+      margin-top: 52px;
+      font-size: 0.78rem;
+      color: var(--text-soft);
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      opacity: 0.7;
+      animation: fadeUp 0.8s 0.6s ease both;
+    }
+
+    /* ---- Keyframes ---- */
+    @keyframes fadeDown {
+      from { opacity: 0; transform: translateY(-24px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(28px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ---- Responsive ---- */
+    @media (max-width: 640px) {
+      .page-wrap { padding: 36px 14px 48px; }
+      .games-grid { gap: 16px; }
+      .card-body { padding: 14px 16px 16px; gap: 12px; }
+      .game-title { font-size: 1.1rem; }
+      .play-btn { width: 40px; height: 40px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Background scene -->
+  <div class="bg-scene">
+    <div class="bg-gradient"></div>
+    <div class="lily lily-1"></div>
+    <div class="lily lily-2"></div>
+    <div class="lily lily-3"></div>
+    <div class="lily lily-4"></div>
+    <div class="lily lily-5"></div>
+    <div class="bubble b1"></div>
+    <div class="bubble b2"></div>
+    <div class="bubble b3"></div>
+    <div class="bubble b4"></div>
+    <div class="bubble b5"></div>
+    <div class="bubble b6"></div>
+    <div class="bubble b7"></div>
+    <div class="bubble b8"></div>
+  </div>
+
+  <div class="page-wrap">
+
+    <!-- Header -->
+    <header class="header">
+      <span class="frog-emoji">🐸</span>
+      <h1>Frog World</h1>
+      <p class="tagline">18 hoppy games — pick your adventure!</p>
+    </header>
+
+    <!-- Games Grid -->
+    <div class="games-grid">
+
+      <a href="Click The Frog/index.html" class="game-card">
+        <div class="card-thumb">
+          <img src="images/Click The Frog.png" alt="Click The Frog">
+        </div>
+        <div class="card-body">
+          <div class="card-text">
+            <div class="game-title">Click The Frog</div>
+            <div class="game-desc">Tap as fast as you can!</div>
+          </div>
+          <div class="play-btn">
+            <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+          </div>
+        </div>
+      </a>
+
+      <a href="Catch The Frog/index.html" class="game-card">
+        <div class="card-thumb">
+          <img src="images/Catch The Frog.png" alt="Catch The Frog">
+        </div>
+        <div class="card-body">
+          <div class="card-text">
+            <div class="game-title">Catch The Frog</div>
+            <div class="game-desc">Test your reflexes!</div>
+          </div>
+          <div class="play-btn">
+            <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+          </div>
+        </div>
+      </a>
+
+      <a href="Drive The Frog/index.html" class="game-card">
+        <div class="card-thumb">
+          <img src="images/Drive The Frog.png" alt="Drive The Frog">
+        </div>
+        <div class="card-body">
+          <div class="card-text">
+            <div class="game-title">Drive The Frog</div>
+            <div class="game-desc">Race through frog highways!</div>
+          </div>
+          <div class="play-btn">
+            <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+          </div>
+        </div>
+      </a>
+
+      <a href="Find The Frog/index.html" class="game-card">
+        <div class="card-thumb">
+          <img src="images/Find The Frog.png" alt="Find The Frog">
+          <span class="badge">New</span>
+        </div>
+        <div class="card-body">
+          <div class="card-text">
+            <div class="game-title">Find The Frog</div>
+            <div class="game-desc">Can you spot the hidden frog?</div>
+          </div>
+          <div class="play-btn">
+            <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+          </div>
+        </div>
+      </a>
+
+      <a href="Jump The Frog/index.html" class="game-card">
+        <div class="card-thumb">
+          <img src="images/Jump The Frog.png" alt="Jump The Frog">
+          <span class="badge">New</span>
+        </div>
+        <div class="card-body">
+          <div class="card-text">
+            <div class="game-title">Jump The Frog</div>
+            <div class="game-desc">Leap over obstacles!</div>
+          </div>
+          <div class="play-btn">
+            <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+          </div>
+        </div>
+      </a>
+
+      <a href="Feed The Frog/index.html" class="game-card">
+        <div class="card-thumb">
+          <img src="images/Feed The Frog.png" alt="Feed The Frog">
+          <span class="badge">New</span>
+        </div>
+        <div class="card-body">
+          <div class="card-text">
+            <div class="game-title">Feed The Frog</div>
+            <div class="game-desc">Catch flies & keep it fed!</div>
+          </div>
+          <div class="play-btn">
+            <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+          </div>
+        </div>
+      </a>
+
+      <a href="Run The Frog/index.html" class="game-card">
+        <div class="card-thumb">
+          <img src="images/Run The Frog.png" alt="Run The Frog">
+          <span class="badge">New</span>
+        </div>
+        <div class="card-body">
+          <div class="card-text">
+            <div class="game-title">Run The Frog</div>
+            <div class="game-desc">Sprint and dodge to survive!</div>
+          </div>
+          <div class="play-btn">
+            <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+          </div>
+        </div>
+      </a>
+
+      <a href="Customize The Frog/index.html" class="game-card">
+        <div class="card-thumb">
+          <img src="images/Customize The Frog.png" alt="Customize The Frog">
+          <span class="badge">New</span>
+        </div>
+        <div class="card-body">
+          <div class="card-text">
+            <div class="game-title">Customize The Frog</div>
+            <div class="game-desc">Design your own frog!</div>
+          </div>
+          <div class="play-btn">
+            <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+          </div>
+        </div>
+      </a>
+
+      <a href="Draw The Frog/index.html" class="game-card">
+        <div class="card-thumb">
+          <img src="images/Draw The Frog.png" alt="Draw The Frog">
+          <span class="badge">New</span>
+        </div>
+        <div class="card-body">
+          <div class="card-text">
+            <div class="game-title">Draw The Frog</div>
+            <div class="game-desc">Unleash your inner artist!</div>
+          </div>
+          <div class="play-btn">
+            <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+          </div>
+        </div>
+      </a>
+
+      <a href="Maze The Frog/index.html" class="game-card">
+        <div class="card-thumb">
+          <img src="images/Maze The Frog.png" alt="Maze The Frog">
+          <span class="badge">New</span>
+        </div>
+        <div class="card-body">
+          <div class="card-text">
+            <div class="game-title">Maze The Frog</div>
+            <div class="game-desc">Escape the frog maze!</div>
+          </div>
+          <div class="play-btn">
+            <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+          </div>
+        </div>
+      </a>
+
+      <a href="Crossy Frogs/index.html" class="game-card">
+        <div class="card-thumb">
+          <img src="images/Crossy Frogs.png" alt="Crossy Frogs">
+          <span class="badge">New</span>
+        </div>
+        <div class="card-body">
+          <div class="card-text">
+            <div class="game-title">Crossy Frogs</div>
+            <div class="game-desc">Cross the road and avoid the obstacles!</div>
+          </div>
+          <div class="play-btn">
+            <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+          </div>
+        </div>
+      </a>
+
+      <a href="Flappy Frog/index.html" class="game-card">
+        <div class="card-thumb">
+          <img src="images/Flappy Frogs.png" alt="Flappy Frog">
+          <span class="badge">New</span>
+        </div>
+        <div class="card-body">
+          <div class="card-text">
+            <div class="game-title">Flappy Frog</div>
+            <div class="game-desc">Flap your way through the pipes!</div>
+          </div>
+          <div class="play-btn">
+            <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+          </div>
+        </div>
+      </a>
+
+      <a href="Frog Break/index.html" class="game-card">
+        <div class="card-thumb">
+          <img src="images/Frog Break.png" alt="Frog Break">
+          <span class="badge">New</span>
+        </div>
+        <div class="card-body">
+          <div class="card-text">
+            <div class="game-title">Frog Break</div>
+            <div class="game-desc">Bounce the frog and break blocks!</div>
+          </div>
+          <div class="play-btn">
+            <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+          </div>
+        </div>
+      </a>
+
+      <a href="Frog Memory/index.html" class="game-card">
+        <div class="card-thumb">
+          <img src="images/Memory Frog.png" alt="Frog Memory">
+          <span class="badge">New</span>
+        </div>
+        <div class="card-body">
+          <div class="card-text">
+            <div class="game-title">Frog Memory</div>
+            <div class="game-desc">Match the things and remember their positions!</div>
+          </div>
+          <div class="play-btn">
+            <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+          </div>
+        </div>
+      </a>
+
+      <a href="Frog Snake/index.html" class="game-card">
+        <div class="card-thumb">
+          <img src="images/Frog Snake.png" alt="Frog Snake">
+          <span class="badge">New</span>
+        </div>
+        <div class="card-body">
+          <div class="card-text">
+            <div class="game-title">Frog Snake</div>
+            <div class="game-desc">Control the snake and eat the flies!</div>
+          </div>
+          <div class="play-btn">
+            <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+          </div>
+        </div>
+      </a>
+
+      <a href="Pond Panic/index.html" class="game-card">
+        <div class="card-thumb">
+          <img src="images/Pond Panic.png" alt="Pond Panic">
+          <span class="badge">New</span>
+        </div>
+        <div class="card-body">
+          <div class="card-text">
+            <div class="game-title">Pond Panic</div>
+            <div class="game-desc">Dodge the meteors!</div>
+          </div>
+          <div class="play-btn">
+            <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+          </div>
+        </div>
+      </a>
+
+      <a href="Frog Shoot/index.html" class="game-card">
+        <div class="card-thumb">
+          <img src="images/Frog Shoot.png" alt="Pond Panic">
+          <span class="badge">New</span>
+        </div>
+        <div class="card-body">
+          <div class="card-text">
+            <div class="game-title">Frog Shoot</div>
+            <div class="game-desc">Shoot the flies!</div>
+          </div>
+          <div class="play-btn">
+            <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+          </div>
+        </div>
+      </a>
+
+      <a href="Solve The Frog/index.html" class="game-card">
+        <div class="card-thumb">
+          <img src="images/Solve The Frog.png" alt="Pond Panic">
+          <span class="badge">New</span>
+        </div>
+        <div class="card-body">
+          <div class="card-text">
+            <div class="game-title">Solve The Frog</div>
+            <div class="game-desc">Solve the frog puzzles!</div>
+          </div>
+          <div class="play-btn">
+            <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+          </div>
+        </div>
+      </a>
+
+    </div>🌿 Frog World &mdash; 2.0.6</p>
+  </div>
+
+</body>
+</html>

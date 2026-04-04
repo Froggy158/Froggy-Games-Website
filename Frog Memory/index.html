@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+  <title>🐸 Frog Memory</title>
+  <link rel="stylesheet" href="style.css"/>
+</head>
+<body>
+
+  <div id="game-wrap">
+
+    <!-- Header -->
+    <div id="header">
+      <h1>🐸 Frog Memory</h1>
+      <div id="score-panel">
+        <div class="sbox">
+          <div class="slabel">Round</div>
+          <div class="sval" id="round-el">1</div>
+        </div>
+        <div class="sbox">
+          <div class="slabel">Best</div>
+          <div class="sval" id="best-el">0</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Status message -->
+    <div id="status-bar">
+      <span id="status-text">Watch the sequence!</span>
+    </div>
+
+    <!-- 4 lily pads -->
+    <div id="pad-grid">
+      <button class="pad" id="pad-0" data-index="0">
+        <span class="pad-emoji" id="emoji-0"></span>
+      </button>
+      <button class="pad" id="pad-1" data-index="1">
+        <span class="pad-emoji" id="emoji-1"></span>
+      </button>
+      <button class="pad" id="pad-2" data-index="2">
+        <span class="pad-emoji" id="emoji-2"></span>
+      </button>
+      <button class="pad" id="pad-3" data-index="3">
+        <span class="pad-emoji" id="emoji-3"></span>
+      </button>
+    </div>
+
+    <!-- Frog reaction -->
+    <div id="frog-display">
+      <span id="frog-emoji">🐸</span>
+      <span id="frog-msg"></span>
+    </div>
+
+    <!-- Progress dots -->
+    <div id="progress-bar">
+      <div id="progress-dots"></div>
+    </div>
+
+    <!-- Start overlay -->
+    <div id="overlay">
+      <div id="ov-emoji">🐸</div>
+      <h2 id="ov-title">Frog Memory</h2>
+      <p id="ov-sub">Watch the lily pads light up,<br>then repeat the sequence!</p>
+      <div id="result-box">
+        <div id="res-round"></div>
+        <div id="res-best"></div>
+      </div>
+      <button id="play-btn">🐸 Start!</button>
+    </div>
+
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>

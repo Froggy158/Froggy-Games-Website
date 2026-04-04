@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Ribbit &amp; Run 🐸</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <div id="game-wrap">
+
+    <!-- Game canvas -->
+    <canvas id="canvas" width="480" height="600"></canvas>
+
+    <!-- HUD: score + lives -->
+    <div id="ui-overlay">
+      <div class="score-box" id="score-display">0</div>
+      <div class="lives-box" id="lives-display">🐸🐸🐸</div>
+    </div>
+
+    <!-- Floating combo / hit text -->
+    <div id="combo-text"></div>
+
+    <!-- Mobile control buttons -->
+    <div id="mobile-btns">
+      <div class="m-btn" id="btn-left">←</div>
+      <div class="m-btn" id="btn-jump">↑</div>
+      <div class="m-btn" id="btn-right">→</div>
+    </div>
+
+    <!-- Menu / Game-over overlay -->
+    <div id="screen-overlay">
+      <div class="big-title">🐸 RIBBIT</div>
+      <div class="big-title" style="font-size:36px;margin-top:-4px;">& RUN!</div>
+      <div class="sub-title">DODGE &bull; JUMP &bull; SURVIVE</div>
+      <button class="play-btn" onclick="startGame()">PLAY NOW</button>
+      <div class="hi-score" id="hi-score-display"></div>
+      <button class="btn-home" onclick="window.location.href='../index.html'">🏠 Home</button>
+      <div class="controls-hint">
+        ← → to switch lanes &nbsp;|&nbsp; ↑ or Space to jump<br>
+        Tap buttons on mobile &nbsp;|&nbsp; Swipe on canvas
+      </div>
+    </div>
+
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>

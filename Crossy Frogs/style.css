@@ -1,0 +1,228 @@
+@import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;700;900&display=swap');
+
+:root {
+  --frog-green: #22c55e;
+  --frog-dark: #15803d;
+  --lily: #4ade80;
+  --pond: #22d3ee;
+  --grass: #16a34a;
+  --road: #374151;
+  --danger: #ef4444;
+  --bg: #0f172a;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  -webkit-user-drag: none;
+  user-drag: none;
+}
+
+body {
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  font-family: 'Nunito', sans-serif;
+  overflow: hidden;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* ── Header ── */
+#ui-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  max-width: 420px;
+  padding: 0 8px 8px;
+}
+
+h1 {
+  font-family: 'Fredoka One', cursive;
+  font-size: 2rem;
+  color: #4ade80;
+  text-shadow: 0 0 18px #16a34a, 3px 3px 0 #14532d;
+  letter-spacing: 1px;
+}
+
+#score-panel {
+  display: flex;
+  gap: 10px;
+}
+
+.score-box {
+  background: rgba(74,222,128,0.12);
+  border: 2px solid #4ade80;
+  border-radius: 12px;
+  padding: 3px 12px;
+  text-align: center;
+  min-width: 68px;
+}
+
+.score-label {
+  font-size: 0.6rem;
+  color: #86efac;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-weight: 700;
+}
+
+.score-value {
+  font-family: 'Fredoka One', cursive;
+  font-size: 1.3rem;
+  color: #fff;
+}
+
+/* ── Canvas ── */
+#canvas-wrap {
+  position: relative;
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 0 50px rgba(74,222,128,0.25), 0 0 100px rgba(0,0,0,0.7);
+  border: 3px solid #4ade80;
+}
+
+canvas { display: block; }
+
+/* ── Overlay ── */
+#overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0,0,0,0.8);
+  z-index: 10;
+  gap: 12px;
+  padding: 24px;
+}
+
+#overlay h2 {
+  font-family: 'Fredoka One', cursive;
+  font-size: 2.4rem;
+  color: #4ade80;
+  text-shadow: 0 0 24px #16a34a;
+  text-align: center;
+}
+
+#overlay .subtitle {
+  color: #d1fae5;
+  font-size: 1rem;
+  text-align: center;
+  font-weight: 700;
+  line-height: 1.5;
+}
+
+#overlay .final-score {
+  font-family: 'Fredoka One', cursive;
+  font-size: 1.6rem;
+  color: #fbbf24;
+}
+
+#start-btn {
+  background: #4ade80;
+  color: #14532d;
+  border: none;
+  border-radius: 50px;
+  padding: 13px 38px;
+  font-family: 'Fredoka One', cursive;
+  font-size: 1.4rem;
+  cursor: pointer;
+  box-shadow: 0 6px 0 #16a34a, 0 8px 20px rgba(0,0,0,0.4);
+  transition: transform 0.1s, box-shadow 0.1s;
+  margin-top: 6px;
+}
+
+#start-btn:active { transform: translateY(3px);  box-shadow: 0 3px 0 #16a34a; }
+
+/* ── Mobile D-pad ── */
+#dpad {
+  display: grid;
+  grid-template-areas:
+    ". up ."
+    "left . right"
+    ". down .";
+  grid-template-columns: 60px 60px 60px;
+  grid-template-rows:    60px 60px 60px;
+  gap: 4px;
+  margin-top: 14px;
+}
+
+.dpad-btn {
+  background: rgba(74,222,128,0.18);
+  border: 2px solid #4ade80;
+  border-radius: 12px;
+  color: #4ade80;
+  font-size: 1.5rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.1s, transform 0.08s;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+.dpad-btn:active {
+  background: rgba(74,222,128,0.45);
+  transform: scale(0.92);
+}
+
+#btn-up    { grid-area: up;    }
+#btn-left  { grid-area: left;  }
+#btn-right { grid-area: right; }
+#btn-down  { grid-area: down;  }
+
+/* ── Responsive ── */
+@media (max-width: 500px) {
+  h1 { font-size: 1.5rem; }
+  .score-value { font-size: 1.1rem; }
+}
+/* ── HOME BUTTON (overlay / start screen) ── */
+.btn-home {
+  background: transparent;
+  color: rgba(255,255,255,0.55);
+  border: 2px solid rgba(74,222,128,0.3);
+  border-radius: 50px;
+  padding: 8px 26px;
+  font-family: 'Fredoka One', cursive;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+  margin-top: 2px;
+}
+
+.btn-home:active { transform: scale(0.95); }
+
+/* ── HOME BUTTON (HUD / game screen) ── */
+.btn-home-hud {
+  background: rgba(74,222,128,0.12);
+  border: 2px solid #4ade80;
+  border-radius: 10px;
+  color: #4ade80;
+  font-size: 1.2rem;
+  width: 40px;
+  height: 40px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.1s, transform 0.08s;
+  flex-shrink: 0;
+}
+.btn-home-hud:active {
+  background: rgba(74,222,128,0.35);
+  transform: scale(0.92);
+}

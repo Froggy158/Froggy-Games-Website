@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>🐸 Frog Drive</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Exo+2:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- START SCREEN -->
+<div class="screen" id="startScreen">
+  <div class="title-block">
+    <div class="title-frog">🐸</div>
+    <h1 class="title">FROG<span>DRIVE</span></h1>
+    <p class="subtitle">Dodge the horde. Don't get hopped.</p>
+  </div>
+  <div class="controls-card">
+    <div class="ctrl-row"><kbd>A</kbd><kbd>D</kbd> or <kbd>◀</kbd><kbd>▶</kbd> to dodge</div>
+    <div class="ctrl-row">Swipe left/right on mobile</div>
+    <div class="ctrl-row">⭐ Power-ups grant brief shield</div>
+  </div>
+  <button class="btn-main" id="startBtn">START DRIVING</button>
+  <div class="best-display" id="startBest">Best: 0</div>
+  <button class="btn-home" onclick="window.location.href='../index.html'">🏠 Home</button>
+</div>
+
+<!-- GAME SCREEN -->
+<canvas id="gameCanvas"></canvas>
+
+<!-- HUD (overlaid on canvas) -->
+<div class="hud hidden" id="hud">
+  <div class="hud-left">
+    <div class="hud-score" id="hudScore">0</div>
+    <div class="hud-label">SCORE</div>
+  </div>
+  <div class="hud-center" id="shieldBar" style="display:none">
+    <div class="shield-label">🛡 SHIELD</div>
+    <div class="shield-bg"><div class="shield-fill" id="shieldFill"></div></div>
+  </div>
+  <div class="hud-right">
+    <div class="hud-lives" id="hudLives">❤️❤️❤️</div>
+    <div class="hud-label">LIVES</div>
+  </div>
+</div>
+
+<!-- COMBO TOAST -->
+<div class="combo-toast hidden" id="comboToast"></div>
+
+<!-- GAME OVER SCREEN -->
+<div class="screen hidden" id="overScreen">
+  <div class="over-title">GAME OVER</div>
+  <div class="over-frog">🐸💀</div>
+  <div class="over-stats">
+    <div class="stat-row"><span>Score</span><strong id="overScore">0</strong></div>
+    <div class="stat-row"><span>Best</span><strong id="overBest" class="gold">0</strong></div>
+    <div class="new-best hidden" id="newBest">🏆 New Record!</div>
+  </div>
+  <button class="btn-main" id="retryBtn">TRY AGAIN</button>
+  <button class="btn-home" onclick="window.location.href='../index.html'">🏠 Home</button>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>

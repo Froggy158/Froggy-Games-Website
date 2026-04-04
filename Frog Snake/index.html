@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+  <title>🐸 Froggy Snake</title>
+  <link rel="stylesheet" href="style.css"/>
+</head>
+<body>
+
+  <div id="header">
+    <h1>🐸 Froggy Snake</h1>
+    <div id="score-panel">
+      <div class="sbox">
+        <div class="slabel">Score</div>
+        <div class="sval" id="score">0</div>
+      </div>
+      <div class="sbox">
+        <div class="slabel">Best</div>
+        <div class="sval" id="best">0</div>
+      </div>
+    </div>
+  </div>
+
+  <div id="wrap">
+    <canvas id="c"></canvas>
+
+    <div id="overlay">
+      <div id="ov-emoji">🐸</div>
+      <h2 id="ov-title">Froggy Snake</h2>
+      <p id="ov-sub">Eat flies to grow your frog chain!<br>Don't bite yourself or hit the walls!</p>
+      <div id="result-box">
+        <div id="res-score"></div>
+        <div id="res-best"></div>
+      </div>
+      <button id="play-btn">🐸 Start Ribbitin'!</button>
+      <button class="btn-home" onclick="window.location.href='../index.html'">🏠 Home</button>
+      <p id="hint">Arrow Keys · WASD · or D-pad below</p>
+    </div>
+  </div>
+
+  <div id="dpad">
+    <div></div>
+    <button class="dp" id="dp-up">▲</button>
+    <div></div>
+    <button class="dp" id="dp-left">◀</button>
+    <button class="dp" id="dp-down">▼</button>
+    <button class="dp" id="dp-right">▶</button>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>

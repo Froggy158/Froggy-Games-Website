@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Find the Frog!</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Titan+One&family=Nunito:wght@400;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div id="bg">
+    <div class="fireflies" id="fireflies"></div>
+</div>
+
+<!-- START SCREEN -->
+<div class="screen" id="startScreen">
+    <div class="logo-wrap">
+        <canvas class="logo-frog" id="logoCanvas" width="110" height="100"></canvas>
+        <h1 class="logo-title">Find the<br><span>Frog!</span></h1>
+    </div>
+    <p class="tagline">Spot the sneaky amphibian hiding in the forest…</p>
+    <div class="best-wrap" id="startBest">🏆 Best: <strong>0</strong></div>
+    <button class="btn btn-play" id="btnPlay">🐸 Play!</button>
+    <button class="btn btn-home" onclick="window.location.href='../index.html'">🏠 Home</button>
+    <div class="how-to">
+        <div class="how-item">🌿 Tap objects to find the frog</div>
+        <div class="how-item">⚡ Find it fast for a time bonus</div>
+        <div class="how-item">⚠️ Wrong taps cost you 25 pts</div>
+    </div>
+</div>
+
+<!-- GAME SCREEN -->
+<div class="screen hidden" id="gameScreen">
+    <div class="hud">
+        <div class="hud-cell">
+            <span class="hud-label">Level</span>
+            <span class="hud-val" id="hudLevel">1</span>
+        </div>
+        <div class="hud-cell hud-center">
+            <span class="hud-label">Score</span>
+            <span class="hud-val big" id="hudScore">0</span>
+        </div>
+        <div class="hud-cell hud-right">
+            <span class="hud-label">Time</span>
+            <div class="timer-wrap">
+                <span class="hud-val" id="hudTime">30</span>
+                <div class="timer-bar-bg"><div class="timer-bar" id="timerBar"></div></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="gameArea">
+        <canvas id="bgCanvas"></canvas>
+        <div id="objectLayer"></div>
+        <div class="toast" id="toast"></div>
+    </div>
+
+    <div class="level-banner hidden" id="levelBanner"></div>
+</div>
+
+<!-- LEVEL COMPLETE -->
+<div class="screen hidden" id="levelScreen">
+    <div class="result-icon" id="resultIcon">🐸</div>
+    <h2 class="result-title">Found it!</h2>
+    <div class="result-stats" id="resultStats"></div>
+    <button class="btn btn-play" id="btnNext">Next Level ➜</button>
+    <button class="btn btn-home" onclick="window.location.href='../index.html'">🏠 Home</button>
+</div>
+
+<!-- GAME OVER -->
+<div class="screen hidden" id="overScreen">
+    <div class="result-icon">⏰</div>
+    <h2 class="result-title over">Time's Up!</h2>
+    <div class="over-score">Score: <strong id="overScore">0</strong></div>
+    <div class="over-best" id="overBest"></div>
+    <button class="btn btn-play" id="btnRetry">Try Again 🐸</button>
+    <button class="btn btn-home" onclick="window.location.href='../index.html'">🏠 Home</button>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>

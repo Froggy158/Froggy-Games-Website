@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Feed the Frog 🐸</title>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <div id="scene">
+    <canvas id="bg-canvas"></canvas>
+
+    <!-- Stars (night mode) -->
+    <div id="stars-wrap"></div>
+
+    <!-- Clouds -->
+    <div class="cloud cloud-1"></div>
+    <div class="cloud cloud-2"></div>
+    <div class="cloud cloud-3"></div>
+    <div class="cloud cloud-4"></div>
+
+    <!-- Sun / Moon -->
+    <div id="sun-moon"></div>
+
+    <!-- Pond -->
+    <div id="pond">
+      <div class="pond-ripple"></div>
+      <div class="pond-ripple"></div>
+      <div class="pond-ripple"></div>
+      <div id="pond-shine"></div>
+    </div>
+
+    <!-- Ground -->
+    <div id="ground">
+      <div class="grass-blade" style="--h:18px;--x:8%;--d:0s"></div>
+      <div class="grass-blade" style="--h:24px;--x:15%;--d:0.3s"></div>
+      <div class="grass-blade" style="--h:16px;--x:23%;--d:0.6s"></div>
+      <div class="grass-blade" style="--h:20px;--x:75%;--d:0.2s"></div>
+      <div class="grass-blade" style="--h:22px;--x:82%;--d:0.5s"></div>
+      <div class="grass-blade" style="--h:15px;--x:91%;--d:0.1s"></div>
+    </div>
+
+    <!-- Lily pad -->
+    <div id="lily-pad">
+      <div class="lily-flower"></div>
+    </div>
+
+    <!-- Hunger bar -->
+    <div id="hunger-wrap">
+      <div id="hunger-label">😋 Hunger</div>
+      <div id="hunger-bar-bg">
+        <div id="hunger-bar"></div>
+        <div id="hunger-bar-shine"></div>
+      </div>
+    </div>
+
+    <!-- XP bar -->
+    <div id="xp-wrap">
+      <div id="xp-label">⭐ <span id="xp-level-tag">Lv.1</span></div>
+      <div id="xp-bar-bg">
+        <div id="xp-bar"></div>
+      </div>
+    </div>
+
+    <!-- Frog -->
+    <div id="frog-wrap" title="Tap me!">
+      <div id="frog-aura"></div>
+      <div id="frog-body">🐸</div>
+      <div id="frog-shadow"></div>
+    </div>
+
+    <!-- Speech bubble -->
+    <div id="speech">Feed me! 🪲</div>
+
+    <!-- Tap reward VFX mount -->
+    <div id="tap-vfx-mount"></div>
+
+    <!-- HUD -->
+    <div id="hud">
+      <div class="hud-pill" id="coin-pill">
+        <span class="hud-icon">🪙</span>
+        <div>
+          <div class="hud-label">Coins</div>
+          <div class="hud-val" id="coin-display">50</div>
+        </div>
+      </div>
+
+      <div class="hud-center">
+        <div id="mood-display" title="Frog Mood"></div>
+        <div id="streak-badge" class="hidden">🔥<span id="streak-num">1</span></div>
+      </div>
+
+      <div class="hud-pill" id="frogcoin-pill">
+        <span class="hud-icon">💩</span>
+        <div>
+          <div class="hud-label">Frog Coins</div>
+          <div class="hud-val" id="frogcoin-display">0</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Day/Night toggle -->
+    <button id="daynight-btn" title="Toggle Day/Night">🌙</button>
+
+    <!-- Home button -->
+    <button id="home-btn" onclick="window.location.href='../index.html'" title="Home">🏠</button>
+
+    <!-- Shop button -->
+    <button id="shop-toggle-btn">🍃 Buy Food</button>
+  </div>
+
+  <!-- Shop overlay -->
+  <div id="shop-overlay"></div>
+
+  <!-- Shop panel -->
+  <div id="shop-panel">
+    <div id="shop-handle"></div>
+    <div id="shop-header">
+      <div id="shop-title">🛒 Food Shop</div>
+      <div id="shop-subtitle">Feed your frog. Earn rewards. 💩</div>
+    </div>
+    <div id="shop-tabs">
+      <button class="shop-tab active" data-tab="food">🌿 Food</button>
+      <button class="shop-tab" data-tab="stats">📊 Stats</button>
+    </div>
+    <div id="tab-food" class="tab-panel active">
+      <div id="food-grid"></div>
+    </div>
+    <div id="tab-stats" class="tab-panel">
+      <div id="stats-panel"></div>
+    </div>
+  </div>
+
+  <!-- Toast & Milestone -->
+  <div class="toast" id="toast"></div>
+  <div id="milestone"></div>
+
+  <!-- Level-up overlay -->
+  <div id="levelup-overlay">
+    <div id="levelup-card">
+      <div id="levelup-frog">🐸</div>
+      <div id="levelup-title">LEVEL UP!</div>
+      <div id="levelup-sub"></div>
+      <button id="levelup-ok">Awesome! 🎉</button>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>

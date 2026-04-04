@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+  <title>🐸 Flappy Frog</title>
+  <link rel="stylesheet" href="style.css"/>
+</head>
+<body>
+
+  <div id="wrap">
+    <canvas id="gameCanvas"></canvas>
+
+    <!-- HUD -->
+    <div id="hud">
+      <div id="score-display">0</div>
+      <div id="best-hud">Best<span id="best-val">0</span></div>
+    </div>
+
+    <!-- Overlay -->
+    <div id="overlay">
+      <div id="ov-emoji">🐸</div>
+      <h2 id="ov-title">Flappy Frog</h2>
+      <p id="ov-sub">Tap, click, or press Space to flap!</p>
+      <div id="result-box">
+        <div id="res-score">0 pts</div>
+        <div id="res-best">Best: 0</div>
+      </div>
+      <button id="play-btn">🐸 Start Hopping!</button>
+      <button class="btn-home" onclick="window.location.href='../index.html'">🏠 Home</button>
+      <p id="tap-hint">Space · Click · Tap · or the button below</p>
+    </div>
+  </div>
+
+  <!-- Mobile jump button -->
+  <button id="jump-btn">🐸</button>
+
+  <script src="script.js"></script>
+</body>
+</html>

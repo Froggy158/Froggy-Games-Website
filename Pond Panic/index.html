@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+  <title>🐸 Pond Panic</title>
+  <link rel="stylesheet" href="style.css"/>
+</head>
+<body>
+
+  <div id="game-wrap">
+
+    <!-- HUD -->
+    <div id="hud">
+      <div class="hud-box">
+        <span class="hud-label">Score</span>
+        <span class="hud-val" id="score">0</span>
+      </div>
+      <h1 id="title">🐸 Pond Panic</h1>
+      <div class="hud-box">
+        <span class="hud-label">Best</span>
+        <span class="hud-val" id="best">0</span>
+      </div>
+    </div>
+
+    <!-- Canvas -->
+    <div id="canvas-wrap">
+      <canvas id="c"></canvas>
+
+      <!-- Overlay -->
+      <div id="overlay">
+        <div id="ov-emoji">🐸</div>
+        <h2 id="ov-title">Pond Panic!</h2>
+        <p id="ov-sub">Dodge the falling meteorites!<br>Don't get squished!</p>
+        <div id="result-box">
+          <div id="res-score"></div>
+          <div id="res-best"></div>
+        </div>
+        <button id="play-btn">🐸 Start Dodging!</button>
+        <button class="btn-home" onclick="window.location.href='../index.html'">🏠 Home</button>
+        <p id="hint">← → Arrow Keys · A D · or buttons below</p>
+      </div>
+    </div>
+
+    <!-- Mobile dodge buttons -->
+    <div id="dodge-btns">
+      <button class="dodge-btn" id="btn-left">◀ Dodge Left</button>
+      <button class="dodge-btn" id="btn-right">Dodge Right ▶</button>
+    </div>
+
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>

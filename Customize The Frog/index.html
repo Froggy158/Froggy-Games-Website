@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, shrink-to-fit=no" />
+  <title>🐸 Frog Customizer</title>
+  <link rel="stylesheet" href="style.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet"/>
+</head>
+<body>
+
+  <div class="app-wrapper">
+    <header>
+      <h1>🐸 Frog Forge</h1>
+      <p class="subtitle">Build your dream frog!</p>
+      <button class="btn-home" onclick="window.location.href='../index.html'">🏠 Home</button>
+    </header>
+
+    <div class="main-layout">
+
+      <!-- FROG CANVAS -->
+      <div class="frog-stage">
+        <div class="stage-bg">
+          <svg id="frogSVG" viewBox="0 0 300 300" xmlns="http://www.w3.org/2000/svg" draggable="false">
+
+            <!-- BACK LEGS -->
+            <ellipse id="backLegLeft"  cx="80"  cy="230" rx="38" ry="22" />
+            <ellipse id="backLegRight" cx="220" cy="230" rx="38" ry="22" />
+
+            <!-- BODY -->
+            <ellipse id="frogBody" cx="150" cy="185" rx="85" ry="70" />
+
+            <!-- BELLY -->
+            <ellipse id="frogBelly" cx="150" cy="200" rx="55" ry="48" fill="white" opacity="0.35"/>
+
+            <!-- FRONT LEGS -->
+            <ellipse id="frontLegLeft"  cx="75"  cy="205" rx="22" ry="14" />
+            <ellipse id="frontLegRight" cx="225" cy="205" rx="22" ry="14" />
+
+            <!-- FEET TOES LEFT BACK -->
+            <circle id="toeBL1" cx="52"  cy="246" r="9" />
+            <circle id="toeBL2" cx="67"  cy="252" r="9" />
+            <circle id="toeBL3" cx="83"  cy="254" r="9" />
+            <circle id="toeBL4" cx="98"  cy="249" r="9" />
+
+            <!-- FEET TOES RIGHT BACK -->
+            <circle id="toeBR1" cx="202" cy="246" r="9" />
+            <circle id="toeBR2" cx="217" cy="252" r="9" />
+            <circle id="toeBR3" cx="233" cy="254" r="9" />
+            <circle id="toeBR4" cx="248" cy="249" r="9" />
+
+            <!-- FEET TOES LEFT FRONT -->
+            <circle id="toeFL1" cx="60"  cy="214" r="6" />
+            <circle id="toeFL2" cx="72"  cy="218" r="6" />
+            <circle id="toeFL3" cx="84"  cy="216" r="6" />
+
+            <!-- FEET TOES RIGHT FRONT -->
+            <circle id="toeFR1" cx="216" cy="214" r="6" />
+            <circle id="toeFR2" cx="228" cy="218" r="6" />
+            <circle id="toeFR3" cx="240" cy="216" r="6" />
+
+            <!-- HEAD -->
+            <ellipse id="frogHead" cx="150" cy="130" rx="72" ry="58" />
+
+            <!-- EYE BUMPS -->
+            <circle id="eyeBumpLeft"  cx="110" cy="90" r="24" />
+            <circle id="eyeBumpRight" cx="190" cy="90" r="24" />
+
+            <!-- EYES -->
+            <circle id="eyeLeft"  cx="110" cy="90" r="16" fill="white"/>
+            <circle id="eyeRight" cx="190" cy="90" r="16" fill="white"/>
+
+            <!-- PUPILS -->
+            <circle id="pupilLeft"  cx="113" cy="90" r="9" />
+            <circle id="pupilRight" cx="193" cy="90" r="9" />
+
+            <!-- EYE SHINE -->
+            <circle cx="116" cy="86" r="3" fill="white" opacity="0.9"/>
+            <circle cx="196" cy="86" r="3" fill="white" opacity="0.9"/>
+
+            <!-- NOSTRILS -->
+            <circle id="nostrilLeft"  cx="137" cy="145" r="4" fill-opacity="0.4"/>
+            <circle id="nostrilRight" cx="163" cy="145" r="4" fill-opacity="0.4"/>
+
+            <!-- MOUTH (cute default) -->
+            <g id="mouthGroup">
+              <!-- Cute mouth -->
+              <path id="mouthCute" d="M 125 158 Q 150 172 175 158" stroke-width="4" stroke-linecap="round" fill="none"/>
+              <!-- Angry mouth (hidden by default) -->
+              <path id="mouthAngry" d="M 122 168 Q 150 152 178 168" stroke-width="4" stroke-linecap="round" fill="none" style="display:none"/>
+              <!-- Tongue (cute only) -->
+              <ellipse id="tongue" cx="150" cy="168" rx="14" ry="7" fill="#ff6b8a" opacity="0.85"/>
+            </g>
+
+            <!-- ANGRY EYEBROWS -->
+            <g id="eyebrowGroup" style="display:none">
+              <line id="browLeft"  x1="92"  y1="72" x2="122" y2="80" stroke="#5a3e00" stroke-width="5" stroke-linecap="round"/>
+              <line id="browRight" x1="178" y1="80" x2="208" y2="72" stroke="#5a3e00" stroke-width="5" stroke-linecap="round"/>
+            </g>
+
+            <!-- CHEEK BLUSH (cute only) -->
+            <g id="blushGroup">
+              <ellipse cx="118" cy="126" rx="16" ry="9" fill="#ff9eb5" opacity="0.35"/>
+              <ellipse cx="182" cy="126" rx="16" ry="9" fill="#ff9eb5" opacity="0.35"/>
+            </g>
+
+            <!-- SPOTS (optional) -->
+            <g id="spotsGroup" style="display:none">
+              <circle cx="140" cy="185" r="11" fill-opacity="0.25" class="spot"/>
+              <circle cx="168" cy="198" r="8"  fill-opacity="0.25" class="spot"/>
+              <circle cx="125" cy="205" r="9"  fill-opacity="0.25" class="spot"/>
+            </g>
+
+          </svg>
+        </div>
+
+        <div class="expression-pills">
+          <button class="pill active" id="btnCute" onclick="setExpression('cute')">😊 Cute</button>
+          <button class="pill" id="btnAngry" onclick="setExpression('angry')">😠 Angry</button>
+        </div>
+
+
+      </div>
+
+      <!-- CONTROLS PANEL -->
+      <div class="controls-panel">
+
+        <div class="panel-section">
+          <h2>🎨 Colors</h2>
+
+          <div class="control-row">
+            <label>Body Color</label>
+            <div class="color-swatch-group" id="bodyColorSwatches"></div>
+            <input type="color" id="bodyColor" value="#5cb85c" onchange="applyBodyColor(this.value)"/>
+          </div>
+
+          <div class="control-row">
+            <label>Belly Color</label>
+            <input type="color" id="bellyColor" value="#a8e6a3" onchange="applyBellyColor(this.value)"/>
+          </div>
+
+          <div class="control-row">
+            <label>Eye Color</label>
+            <div class="color-swatch-group" id="eyeColorSwatches"></div>
+            <input type="color" id="eyeColor" value="#f5a623" onchange="applyEyeColor(this.value)"/>
+          </div>
+
+          <div class="control-row">
+            <label>Pupil Color</label>
+            <input type="color" id="pupilColor" value="#1a1a1a" onchange="applyPupilColor(this.value)"/>
+          </div>
+
+          <div class="control-row">
+            <label>Mouth Color</label>
+            <input type="color" id="mouthColor" value="#3a2a00" onchange="applyMouthColor(this.value)"/>
+          </div>
+        </div>
+
+        <div class="panel-section">
+          <h2>📐 Size & Shape</h2>
+
+          <div class="slider-row">
+            <label>Body Width <span id="bodyWidthVal">100%</span></label>
+            <input type="range" min="60" max="150" value="100" id="bodyWidth" oninput="scaleBodyWidth(this.value)"/>
+          </div>
+
+          <div class="slider-row">
+            <label>Body Height <span id="bodyHeightVal">100%</span></label>
+            <input type="range" min="60" max="150" value="100" id="bodyHeight" oninput="scaleBodyHeight(this.value)"/>
+          </div>
+
+          <div class="slider-row">
+            <label>Head Size <span id="headSizeVal">100%</span></label>
+            <input type="range" min="60" max="140" value="100" id="headSize" oninput="scaleHead(this.value)"/>
+          </div>
+
+          <div class="slider-row">
+            <label>Eye Size <span id="eyeSizeVal">100%</span></label>
+            <input type="range" min="50" max="160" value="100" id="eyeSize" oninput="scaleEyes(this.value)"/>
+          </div>
+
+          <div class="slider-row">
+            <label>Leg Size <span id="legSizeVal">100%</span></label>
+            <input type="range" min="50" max="150" value="100" id="legSize" oninput="scaleLegs(this.value)"/>
+          </div>
+
+          <div class="slider-row">
+            <label>Mouth Size <span id="mouthSizeVal">100%</span></label>
+            <input type="range" min="50" max="150" value="100" id="mouthSize" oninput="scaleMouth(this.value)"/>
+          </div>
+        </div>
+
+        <div class="panel-section">
+          <h2>✨ Extras</h2>
+
+          <div class="toggle-row">
+            <label>Spots</label>
+            <label class="switch">
+              <input type="checkbox" id="toggleSpots" onchange="toggleSpots(this.checked)"/>
+              <span class="slider-toggle"></span>
+            </label>
+          </div>
+
+          <div class="toggle-row">
+            <label>Blush Cheeks</label>
+            <label class="switch">
+              <input type="checkbox" id="toggleBlush" checked onchange="toggleBlush(this.checked)"/>
+              <span class="slider-toggle"></span>
+            </label>
+          </div>
+
+          <div class="control-row">
+            <label>Spot Color</label>
+            <input type="color" id="spotColor" value="#2d7a2d" onchange="applySpotColor(this.value)"/>
+          </div>
+        </div>
+
+        <button class="reset-btn" onclick="resetAll()">🔄 Reset to Default</button>
+
+      </div>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>

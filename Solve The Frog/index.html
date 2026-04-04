@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <!-- Prevent zoom on mobile -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Solve The Frog 🐸</title>
+  <link rel="stylesheet" href="style.css" />
+  <!-- Google Fonts: playful display + clean body -->
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet" />
+</head>
+<body>
+
+  <!-- ═══════════════════════════════════════════
+       SCREENS
+  ══════════════════════════════════════════════ -->
+
+  <!-- SPLASH / HOME -->
+  <div id="screen-home" class="screen active">
+    <div class="home-bg">
+      <div class="lily-deco l1">🌸</div>
+      <div class="lily-deco l2">🍃</div>
+      <div class="lily-deco l3">🌺</div>
+      <div class="lily-deco l4">🍀</div>
+    </div>
+    <div class="home-content">
+      <div class="game-logo">
+        <span class="logo-frog">🐸</span>
+        <h1 class="logo-title">Solve The Frog</h1>
+        <p class="logo-sub">A Hoppy Puzzle Adventure</p>
+      </div>
+      <div class="home-buttons">
+        <button class="btn btn-primary" id="btn-play">▶ Play</button>
+        <button class="btn btn-secondary" id="btn-shop">🪙 Shop</button>
+        <button class="btn btn-secondary" id="btn-sound">🔊 Sound: ON</button>
+      </div>
+      <div class="coin-display home-coins">
+        <span class="coin-icon">🪙</span>
+        <span id="home-coin-count">0</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- LEVEL SELECT -->
+  <div id="screen-levels" class="screen">
+    <div class="screen-header">
+      <button class="btn-icon" id="btn-levels-back">←</button>
+      <h2>Choose Level</h2>
+      <div class="coin-display">
+        <span class="coin-icon">🪙</span>
+        <span id="levels-coin-count">0</span>
+      </div>
+    </div>
+    <div id="level-grid" class="level-grid"></div>
+  </div>
+
+  <!-- GAME SCREEN -->
+  <div id="screen-game" class="screen">
+    <div class="game-hud">
+      <button class="btn-home" onclick="window.location.href='../index.html'">🏠 Home</button>
+      <button class="btn-icon" id="btn-game-back">←</button>
+      <div class="hud-center">
+        <span class="hud-level" id="hud-level-label">Level 1</span>
+        <span class="hud-title" id="hud-puzzle-title">Lily Pad Leap</span>
+      </div>
+      <div class="hud-right">
+        <div class="coin-display small">
+          <span class="coin-icon">🪙</span>
+          <span id="game-coin-count">0</span>
+        </div>
+        <button class="btn-icon" id="btn-restart">↺</button>
+      </div>
+    </div>
+
+    <!-- Stats bar -->
+    <div class="game-stats">
+      <div class="stat-item">
+        <span class="stat-label">Moves</span>
+        <span class="stat-val" id="stat-moves">0</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">Best</span>
+        <span class="stat-val" id="stat-best">—</span>
+      </div>
+      <div class="stat-item" id="stat-timer-wrap">
+        <span class="stat-label">Time</span>
+        <span class="stat-val" id="stat-timer">0s</span>
+      </div>
+    </div>
+
+    <!-- Puzzle area -->
+    <div id="game-area" class="game-area"></div>
+
+    <!-- Hint button -->
+    <div class="game-footer">
+      <button class="btn btn-hint" id="btn-hint">💡 Hint <span id="hint-cost">(10🪙)</span></button>
+    </div>
+
+    <!-- Hint overlay -->
+    <div id="hint-overlay" class="hint-overlay hidden">
+      <div class="hint-box">
+        <p id="hint-text"></p>
+        <button class="btn btn-primary" id="btn-hint-close">Got it!</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- WIN SCREEN -->
+  <div id="screen-win" class="screen">
+    <div class="win-content">
+      <div class="win-frog">🐸</div>
+      <h2 class="win-title">Ribbit! You Win!</h2>
+      <div class="win-stars" id="win-stars"></div>
+      <div class="win-stats">
+        <div class="win-stat"><span class="ws-label">Moves</span><span class="ws-val" id="win-moves">0</span></div>
+        <div class="win-stat"><span class="ws-label">Time</span><span class="ws-val" id="win-time">0s</span></div>
+        <div class="win-stat"><span class="ws-label">Coins Earned</span><span class="ws-val" id="win-coins">+0</span></div>
+      </div>
+      <div class="win-buttons">
+        <button class="btn btn-primary" id="btn-next-level">Next Level →</button>
+        <button class="btn btn-secondary" id="btn-win-restart">↺ Replay</button>
+        <button class="btn btn-secondary" id="btn-win-levels">📋 Levels</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SHOP SCREEN -->
+  <div id="screen-shop" class="screen">
+    <div class="screen-header">
+      <button class="btn-icon" id="btn-shop-back">←</button>
+      <h2>Frog Shop</h2>
+      <div class="coin-display">
+        <span class="coin-icon">🪙</span>
+        <span id="shop-coin-count">0</span>
+      </div>
+    </div>
+    <div id="shop-grid" class="shop-grid"></div>
+  </div>
+
+  <!-- TRANSITION OVERLAY -->
+  <div id="transition-overlay" class="transition-overlay hidden"></div>
+
+  <!-- TOAST -->
+  <div id="toast" class="toast hidden"></div>
+
+  <script src="script.js"></script>
+</body>
+</html>

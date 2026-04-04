@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Froggy Maze</title>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- ===== START SCREEN ===== -->
+  <div id="start-screen" class="screen active">
+    <div class="frog-hero">🐸</div>
+    <div>
+      <div class="game-title">FROGGY<br>MAZE</div>
+      <div class="subtitle">hop to the fly!</div>
+    </div>
+    <div class="levels-preview">
+      <div class="level-pill">🌿 Lily Pond</div>
+      <div class="level-pill">💧 Muddy Creek</div>
+      <div class="level-pill">🌑 Dark Swamp</div>
+      <div class="level-pill">👻 Haunted Bog</div>
+      <div class="level-pill">🔥 Chaos Jungle</div>
+    </div>
+    <button class="start-btn" onclick="startGame(0)">▶ START</button>
+    <button class="btn-home" onclick="window.location.href='../index.html'">🏠 Home</button>
+  </div>
+
+  <!-- ===== GAME SCREEN ===== -->
+  <div id="game-screen" class="screen">
+    <div class="hud">
+      <div class="hud-item" id="hud-level">🌿 Level 1: Lily Pond</div>
+      <div class="hud-sep">·</div>
+      <div class="hud-item">👣 Moves: <span id="move-count">0</span></div>
+      <div class="hud-sep">·</div>
+      <div class="hud-item hud-small" id="hud-total">of 5</div>
+    </div>
+
+    <div class="maze-wrapper">
+      <canvas id="maze-canvas"></canvas>
+    </div>
+
+    <div class="controls">
+      <button class="ctrl-btn up"    onclick="moveFrog(0,-1)">↑</button>
+      <button class="ctrl-btn left"  onclick="moveFrog(-1,0)">←</button>
+      <button class="ctrl-btn down"  onclick="moveFrog(0,1)">↓</button>
+      <button class="ctrl-btn right" onclick="moveFrog(1,0)">→</button>
+    </div>
+  </div>
+
+  <!-- ===== LEVEL WIN SCREEN ===== -->
+  <div id="win-screen" class="screen">
+    <div class="win-frog">🐸</div>
+    <div class="win-title">LEVEL CLEAR!</div>
+    <div class="win-level-name" id="win-level-name"></div>
+    <div class="moves-display" id="win-moves">Moves: 0</div>
+    <div class="win-btns">
+      <button class="next-level-btn" id="next-level-btn" onclick="nextLevel()">Next Level ➜</button>
+      <button class="restart-btn" onclick="resetGame()">↩ Menu</button>
+      <button class="btn-home" onclick="window.location.href='../index.html'">🏠 Home</button>
+    </div>
+    <div class="confetti-container" id="confetti"></div>
+  </div>
+
+  <!-- ===== ALL CLEAR SCREEN ===== -->
+  <div id="all-clear-screen" class="screen">
+    <div class="trophy">🏆</div>
+    <div class="all-clear-title">ALL CLEAR!</div>
+    <div class="all-clear-msg">You conquered all 5 mazes!<br>The frog is the champion! 🐸</div>
+    <button class="start-btn" onclick="resetGame()">🔄 Play Again</button>
+    <button class="btn-home" onclick="window.location.href='../index.html'">🏠 Home</button>
+    <div class="confetti-container" id="confetti2"></div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>

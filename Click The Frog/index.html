@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Click The Frog 🐸</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+  <!-- Top-left button: Settings (before game), Achievements (during game) -->
+  <button id="settings-btn" aria-label="Settings">
+    <img src="images/Settings.png" alt="Settings Icon" />
+  </button>
+  <button id="achievements-btn" aria-label="Achievements">
+    <img src="images/Achievements.png" alt="Achievements Icon" />
+  </button>,
+
+  <!-- START SCREEN -->
+  <div class="center-container" id="start-screen">
+    <div class="start-logo">
+      <span class="logo-frog">🐸</span>
+      <h1 class="centered-title">Click The Frog</h1>
+      <p class="start-tagline">How many hops can you get?</p>
+    </div>
+    <button id="startBtn" class="start-button" type="button">
+      <span>Start Hopping!</span>
+    </button>
+    <p class="start-hint">Tap the frog. Earn clicks. Buy upgrades.</p>
+    <button class="btn-home" onclick="window.location.href='../index.html'">🏠 Home</button>
+  </div>
+
+  <!-- SETTINGS OVERLAY + MODAL -->
+  <div id="settings-overlay"></div>
+  <div id="settings-modal" role="dialog" aria-modal="true" aria-labelledby="settings-title">
+    <button id="close-settings" aria-label="Close settings">&times;</button>
+    <h2 id="settings-title">⚙️ Settings</h2>
+    <div class="settings-body">
+      <div class="setting-row">
+        <div class="setting-label">
+          <span class="setting-icon">🌙</span>
+          <label for="dark-mode-toggle">Dark Mode</label>
+        </div>
+        <label class="switch">
+          <input type="checkbox" id="dark-mode-toggle" />
+          <span class="slider"></span>
+        </label>
+      </div>
+      <div class="setting-row">
+        <div class="setting-label">
+          <span class="setting-icon">💾</span>
+          <label for="auto-save-toggle">Auto Save</label>
+        </div>
+        <label class="switch">
+          <input type="checkbox" id="auto-save-toggle" />
+          <span class="slider"></span>
+        </label>
+      </div>
+      <div class="setting-row">
+        <div class="setting-label">
+          <span class="setting-icon">🔊</span>
+          <label for="sound-toggle">Sound</label>
+        </div>
+        <label class="switch">
+          <input type="checkbox" id="sound-toggle" checked />
+          <span class="slider"></span>
+        </label>
+      </div>
+    </div>
+    <button id="save-game-btn" class="modal-action-btn">💾 Save Now</button>
+    <button id="reset-game-btn" class="modal-action-btn danger">🗑️ Reset Game</button>
+    <p id="shop-text-note"></p>
+  </div>
+
+  <!-- ACHIEVEMENTS MODAL -->
+  <div id="achievements-modal" role="dialog" aria-modal="true" aria-labelledby="achievements-title">
+    <button id="close-achievements" aria-label="Close achievements">&times;</button>
+    <h2 id="achievements-title">🏆 Achievements</h2>
+    <div id="achievements-progress-bar-wrap">
+      <div id="achievements-progress-bar"></div>
+      <span id="achievements-progress-label"></span>
+    </div>
+    <div id="achievements-list"></div>
+  </div>
+
+  <!-- GAME ROOT (hidden until Start) -->
+  <div id="game-root">
+    <!-- HUD -->
+    <div id="hud">
+      <div id="counter">
+        <span id="counter-num">0</span>
+        <span id="counter-label"> clicks</span>
+      </div>
+      <div id="combo-display" class="hidden">🔥 ×<span id="combo-num">1</span> Combo!</div>
+      <div id="timer-display"></div>
+    </div>
+
+    <button id="shop-btn">🛒 Shop</button>
+    <button class="btn-home" onclick="window.location.href='../index.html'">🏠 Home</button>
+
+    <!-- SHOP OVERLAY + MODAL -->
+    <div id="overlay"></div>
+    <div id="shop-modal">
+      <div id="close-shop">✕</div>
+      <div class="pill-switcher">
+        <button class="pill-btn active" id="btn-shop" onclick="switchTab('shop')">🛒 Shop</button>
+        <button class="pill-btn" id="btn-skins" onclick="switchTab('skins')">🎨 Skins</button>
+      </div>
+
+      <div id="shop-content">
+        <h2>Frog Shop</h2>
+        <div class="shop-grid" id="shop-items-grid">
+          <!-- Items rendered by JS -->
+        </div>
+      </div>
+
+      <div id="skins-content" style="display:none;">
+        <h2>Frog Skins 🐸</h2>
+        <div class="skins-grid" id="skins-grid">
+          <!-- Skins rendered by JS -->
+        </div>
+      </div>
+    </div>
+
+    <!-- Audio -->
+    <audio id="clickSound" preload="auto">
+      <source src="sound/ribbit.mp3" type="audio/mpeg">
+    </audio>
+
+    <!-- Frogs -->
+    <img id="random-img" src="images/Frog-2.png" alt="Main Frog" draggable="false" />
+    <img id="second-random-img" style="display:none;" src="images/Frog-1.png" alt="Second Frog" draggable="false" />
+  </div>
+
+  <!-- Click particle container -->
+  <div id="particles-container"></div>
+
+  <script src="script.js"></script>
+</body>
+</html>

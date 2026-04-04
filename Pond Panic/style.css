@@ -1,0 +1,219 @@
+@import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@700;900&display=swap');
+
+*, *::before, *::after {
+  margin: 0; padding: 0; box-sizing: border-box;
+}
+
+body {
+  background: #060f08;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Fredoka One', cursive;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
+  overflow: hidden;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  -webkit-user-drag: none;
+}
+
+/* ── Game wrapper ── */
+#game-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+}
+
+/* ── HUD ── */
+#hud {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 360px;
+  padding: 0 4px 8px;
+}
+
+#title {
+  font-size: 1.4rem;
+  color: #52b788;
+  text-shadow: 0 2px 0 #1b4332, 0 0 16px rgba(82,183,136,0.4);
+  letter-spacing: 0.5px;
+}
+
+.hud-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: rgba(82,183,136,0.1);
+  border: 2px solid #52b788;
+  border-radius: 10px;
+  padding: 3px 12px;
+  min-width: 60px;
+}
+
+.hud-label {
+  font-family: 'Nunito', sans-serif;
+  font-size: 0.58rem;
+  color: #74c69d;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-weight: 900;
+}
+
+.hud-val {
+  font-size: 1.2rem;
+  color: #fff;
+  line-height: 1.2;
+}
+
+/* ── Canvas ── */
+#canvas-wrap {
+  position: relative;
+  border-radius: 14px;
+  overflow: hidden;
+  border: 3px solid #52b788;
+  box-shadow:
+    0 0 50px rgba(82,183,136,0.22),
+    0 20px 50px rgba(0,0,0,0.7);
+}
+
+canvas { display: block; }
+
+/* ── Overlay ── */
+#overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(6,15,8,0.87);
+  z-index: 20;
+  gap: 10px;
+  padding: 24px 20px;
+  backdrop-filter: blur(4px);
+}
+
+#ov-emoji { font-size: 3.2rem; line-height: 1; }
+
+#ov-title {
+  font-size: 2rem;
+  color: #52b788;
+  text-shadow: 0 3px 0 #1b4332;
+  text-align: center;
+}
+
+#ov-sub {
+  font-family: 'Nunito', sans-serif;
+  font-size: 0.88rem;
+  color: #b7e4c7;
+  text-align: center;
+  line-height: 1.6;
+  font-weight: 700;
+}
+
+#result-box {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  background: rgba(255,255,255,0.06);
+  border: 2px solid rgba(82,183,136,0.35);
+  border-radius: 13px;
+  padding: 9px 28px;
+  gap: 2px;
+  margin: 4px 0;
+}
+
+#res-score {
+  font-size: 1.8rem;
+  color: #ffd166;
+}
+
+#res-best {
+  font-family: 'Nunito', sans-serif;
+  font-size: 0.82rem;
+  color: #b7e4c7;
+  font-weight: 700;
+}
+
+#play-btn {
+  background: #52b788;
+  color: #1b4332;
+  border: none;
+  border-radius: 50px;
+  padding: 12px 36px;
+  font-family: 'Fredoka One', cursive;
+  font-size: 1.25rem;
+  cursor: pointer;
+  box-shadow: 0 6px 0 #2d6a4f, 0 10px 22px rgba(0,0,0,0.35);
+  transition: transform 0.1s, box-shadow 0.1s;
+  margin-top: 4px;
+  -webkit-tap-highlight-color: transparent;
+}
+
+#play-btn:active { transform: translateY(3px);  box-shadow: 0 3px 0 #2d6a4f; }
+
+.btn-home {
+  background: transparent;
+  color: rgba(183,228,199,0.5);
+  border: 2px solid rgba(82,183,136,0.25);
+  border-radius: 50px;
+  padding: 8px 28px;
+  font-family: 'Fredoka One', cursive;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.btn-home:active { transform: scale(0.95); }
+
+#hint {
+  font-family: 'Nunito', sans-serif;
+  font-size: 0.72rem;
+  color: #52b788;
+  font-weight: 700;
+  margin-top: 2px;
+}
+
+/* ── Dodge buttons ── */
+#dodge-btns {
+  display: flex;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.dodge-btn {
+  flex: 1;
+  width: 160px;
+  height: 58px;
+  background: rgba(82,183,136,0.13);
+  border: 2.5px solid #52b788;
+  border-radius: 14px;
+  color: #52b788;
+  font-family: 'Fredoka One', cursive;
+  font-size: 1.1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: background 0.08s, transform 0.07s;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+.dodge-btn:active {
+  background: rgba(82,183,136,0.36);
+  transform: scale(0.94);
+}
+
+/* ── Responsive ── */
+@media (max-width: 400px) {
+  #hud { width: 320px; }
+  #title { font-size: 1.1rem; }
+  .dodge-btn { width: 136px; font-size: 0.95rem; }
+}

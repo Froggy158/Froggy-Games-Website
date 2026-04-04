@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Froggle Jump 🐸</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div id="bgDecor"></div>
+
+    <!-- Start Screen -->
+    <div class="screen" id="startScreen">
+        <div class="frog-logo">🐸</div>
+        <h1 class="title">FROGGLE<br><span>JUMP</span></h1>
+        <p class="subtitle">Hop to the top!</p>
+        <div class="controls-hint">
+            <div class="hint-item">⬅️ ➡️ Arrow keys to move</div>
+            <div class="hint-item">👆 Hold &amp; drag to steer</div>
+        </div>
+        <button class="btn-start" id="btnStart">PLAY!</button>
+        <div class="best-score-display" id="bestScoreDisplay">Best: 0</div>
+        <button class="btn-home" onclick="window.location.href='../index.html'">🏠 Home</button>
+    </div>
+
+    <!-- Game Screen -->
+    <div class="screen hidden" id="gameScreen">
+        <div class="hud">
+            <div class="hud-score" id="hudScore">0</div>
+            <div class="hud-best" id="hudBest">Best: 0</div>
+        </div>
+        <canvas id="gameCanvas"></canvas>
+        <div class="move-btns">
+            <button class="move-btn" id="btnLeft">◀</button>
+            <button class="move-btn" id="btnRight">▶</button>
+        </div>
+    </div>
+
+    <!-- Game Over Screen -->
+    <div class="screen hidden" id="gameOverScreen">
+        <div class="frog-dead">😵</div>
+        <h2 class="go-title">SPLAT!</h2>
+        <div class="go-score-wrap">
+            <div class="go-label">Score</div>
+            <div class="go-score" id="goScore">0</div>
+        </div>
+        <div class="go-score-wrap">
+            <div class="go-label">Best</div>
+            <div class="go-best" id="goBest">0</div>
+        </div>
+        <button class="btn-start" id="btnRestart">HOP AGAIN!</button>
+        <button class="btn-home" onclick="window.location.href='../index.html'">🏠 Home</button>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

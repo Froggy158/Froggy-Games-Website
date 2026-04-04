@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Catch the Frog</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Titan+One&family=Nunito:wght@400;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<div id="bg">
+  <div class="fireflies" id="fireflies"></div>
+</div>
+
+<!-- START SCREEN -->
+<div class="screen active" id="startScreen">
+  <canvas class="logo-frog" id="logoCanvas" width="100" height="92"></canvas>
+  <h1 class="title">CATCH THE<br><span>FROG!</span></h1>
+  <p class="tagline">Smack the frogs before they hop away!</p>
+  <div class="how-to">
+    <div class="how-item"><span class="how-icon">✅</span> +10 per catch</div>
+    <div class="how-item"><span class="how-icon">❌</span> −5 per miss</div>
+    <div class="how-item"><span class="how-icon">⚡</span> Gets faster every 50 pts</div>
+    <div class="how-item"><span class="how-icon">⏱️</span> 60 seconds</div>
+  </div>
+  <div class="best-wrap" id="startBest">🏆 Best: <strong>0</strong></div>
+  <button class="btn-main" id="playBtn">🐸 PLAY!</button>
+  <a href="../index.html" class="btn-home">🏠 Home</a>
+</div>
+
+<!-- GAME SCREEN -->
+<div class="screen" id="gameScreen">
+  <div class="hud">
+    <div class="hud-cell">
+      <span class="hud-label">SCORE</span>
+      <span class="hud-val" id="score">0</span>
+    </div>
+    <div class="hud-cell hud-center">
+      <span class="hud-label">BEST</span>
+      <span class="hud-val gold" id="hudBest">0</span>
+    </div>
+    <div class="hud-cell hud-right">
+      <span class="hud-label">TIME</span>
+      <div class="timer-wrap">
+        <span class="hud-val" id="timer">60</span>
+        <div class="timer-bar-bg"><div class="timer-bar" id="timerBar"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="game-board" id="board">
+    <div class="pad" data-index="0"><div class="pad-inner"></div></div>
+    <div class="pad" data-index="1"><div class="pad-inner"></div></div>
+    <div class="pad" data-index="2"><div class="pad-inner"></div></div>
+    <div class="pad" data-index="3"><div class="pad-inner"></div></div>
+    <div class="pad" data-index="4"><div class="pad-inner"></div></div>
+    <div class="pad" data-index="5"><div class="pad-inner"></div></div>
+    <div class="pad" data-index="6"><div class="pad-inner"></div></div>
+    <div class="pad" data-index="7"><div class="pad-inner"></div></div>
+    <div class="pad" data-index="8"><div class="pad-inner"></div></div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+  <div class="game-btns">
+    <button class="btn-secondary" id="newGameBtn">↺ New Game</button>
+    <a href="../index.html" class="btn-home">🏠 Home</a>
+  </div>
+</div>
+
+<!-- GAME OVER SCREEN -->
+<div class="screen" id="overScreen">
+  <div class="over-frog" id="overFrog">🐸</div>
+  <h2 class="over-title" id="overTitle">TIME'S UP!</h2>
+  <div class="over-stats">
+    <div class="stat-row"><span>Score</span><strong id="overScore">0</strong></div>
+    <div class="stat-row"><span>Best</span><strong class="gold" id="overBest">0</strong></div>
+    <div class="new-best hidden" id="newBest">🏆 New Record!</div>
+  </div>
+  <button class="btn-main" id="retryBtn">🐸 PLAY AGAIN</button>
+</div>
+
+<audio id="hitSound"  src="click.mp3" preload="auto"></audio>
+<audio id="missSound" src="miss.mp3"  preload="auto"></audio>
+
+<script src="script.js"></script>
+</body>
+</html>

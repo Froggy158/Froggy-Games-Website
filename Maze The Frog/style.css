@@ -1,0 +1,372 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  user-select: none;
+  -webkit-user-drag: none;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+}
+
+body {
+  font-family: 'Nunito', sans-serif;
+  background: #1a3a1a;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 60px 30px at 10% 20%, #2d5a2d55 0%, transparent 70%),
+    radial-gradient(ellipse 80px 40px at 85% 15%, #2d5a2d44 0%, transparent 70%),
+    radial-gradient(ellipse 50px 25px at 50% 80%, #2d5a2d44 0%, transparent 70%),
+    radial-gradient(ellipse 70px 35px at 20% 70%, #2d5a2d33 0%, transparent 70%),
+    radial-gradient(ellipse 90px 45px at 75% 60%, #2d5a2d33 0%, transparent 70%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ===== SCREENS ===== */
+.screen {
+  display: none;
+  position: relative;
+  z-index: 1;
+}
+.screen.active { display: flex; }
+
+/* ===== START SCREEN ===== */
+#start-screen {
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 28px;
+  padding: 40px;
+}
+
+.game-title {
+  font-family: 'Fredoka One', cursive;
+  font-size: 72px;
+  color: #7fff7f;
+  text-shadow: 0 4px 0 #2d6b2d, 0 8px 20px #00000088;
+  line-height: 1;
+  animation: titleBounce 2s ease-in-out infinite;
+}
+
+@keyframes titleBounce {
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(-10px); }
+}
+
+.subtitle {
+  font-size: 22px;
+  color: #a8e6a8;
+  font-weight: 600;
+  letter-spacing: 1px;
+  margin-top: 6px;
+}
+
+.frog-hero {
+  font-size: 110px;
+  filter: drop-shadow(0 8px 16px #00000066);
+  animation: frogWiggle 1.5s ease-in-out infinite;
+}
+
+@keyframes frogWiggle {
+  0%, 100% { transform: rotate(-5deg) scale(1); }
+  50%       { transform: rotate(5deg) scale(1.05); }
+}
+
+/* Level pills on start screen */
+.levels-preview {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  max-width: 420px;
+}
+
+.level-pill {
+  background: #ffffff12;
+  border: 1.5px solid #7fff7f33;
+  border-radius: 50px;
+  padding: 6px 16px;
+  color: #a8e6a8;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.start-btn {
+  font-family: 'Fredoka One', cursive;
+  font-size: 32px;
+  color: #1a3a1a;
+  background: linear-gradient(135deg, #7fff7f, #4fc94f);
+  border: none;
+  border-radius: 50px;
+  padding: 16px 56px;
+  cursor: pointer;
+  box-shadow: 0 6px 0 #2d6b2d, 0 10px 30px #00000055;
+  transition: all 0.1s;
+  letter-spacing: 1px;
+}
+
+
+.start-btn:active {
+  transform: translateY(3px);
+  box-shadow: 0 3px 0 #2d6b2d, 0 6px 20px #00000044;
+}
+
+.btn-home {
+  font-family: 'Fredoka One', cursive;
+  font-size: 16px;
+  color: #a8e6a888;
+  background: transparent;
+  border: 2px solid #7fff7f22;
+  border-radius: 50px;
+  padding: 10px 28px;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+  letter-spacing: 0.5px;
+}
+
+.btn-home:active { transform: scale(0.95); }
+
+/* ===== GAME SCREEN ===== */
+#game-screen {
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 20px;
+  min-height: 100vh;
+  justify-content: center;
+}
+
+.hud {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: #ffffff15;
+  border: 1.5px solid #7fff7f44;
+  border-radius: 50px;
+  padding: 10px 24px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.hud-item {
+  color: #c8f5c8;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.hud-small {
+  color: #7fff7f88;
+  font-size: 13px;
+}
+
+.hud-sep {
+  color: #7fff7f44;
+  font-size: 18px;
+}
+
+/* Maze canvas */
+.maze-wrapper {
+  position: relative;
+  border: 3px solid #4fc94f88;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 0 40px #00ff0022, 0 16px 40px #00000066;
+}
+
+#maze-canvas {
+  display: block;
+  background: #0d2b0d;
+}
+
+/* ===== CONTROLS ===== */
+.controls {
+  display: grid;
+  grid-template-areas:
+    ". up ."
+    "left down right";
+  gap: 8px;
+}
+
+.ctrl-btn {
+  width: 62px;
+  height: 62px;
+  border-radius: 16px;
+  border: 2px solid #4fc94f88;
+  background: #1e4a1e;
+  color: #7fff7f;
+  font-size: 26px;
+  cursor: pointer;
+  transition: all 0.1s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 0 #0d2b0d, 0 6px 20px #00000044;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.ctrl-btn:active { transform: translateY(2px); box-shadow: 0 2px 0 #0d2b0d; }
+.ctrl-btn.up    { grid-area: up; }
+.ctrl-btn.left  { grid-area: left; }
+.ctrl-btn.down  { grid-area: down; }
+.ctrl-btn.right { grid-area: right; }
+
+/* ===== WIN / LEVEL CLEAR SCREEN ===== */
+#win-screen {
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 20px;
+  padding: 40px;
+}
+
+.win-frog {
+  font-size: 90px;
+  animation: winDance 0.6s ease-in-out infinite alternate;
+}
+
+@keyframes winDance {
+  from { transform: rotate(-10deg) translateY(0); }
+  to   { transform: rotate(10deg)  translateY(-15px); }
+}
+
+.win-title {
+  font-family: 'Fredoka One', cursive;
+  font-size: 60px;
+  color: #ffd700;
+  text-shadow: 0 4px 0 #b8860b, 0 8px 20px #00000088;
+  animation: winPop 0.5s ease-out;
+}
+
+@keyframes winPop {
+  0%   { transform: scale(0.5); opacity: 0; }
+  70%  { transform: scale(1.1); }
+  100% { transform: scale(1);   opacity: 1; }
+}
+
+.win-level-name {
+  color: #a8e6a8;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.moves-display {
+  background: #ffffff15;
+  border: 2px solid #ffd70055;
+  border-radius: 20px;
+  padding: 12px 28px;
+  color: #ffd700;
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.win-btns {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.next-level-btn {
+  font-family: 'Fredoka One', cursive;
+  font-size: 22px;
+  color: #1a3a1a;
+  background: linear-gradient(135deg, #ffd700, #ffb700);
+  border: none;
+  border-radius: 50px;
+  padding: 14px 36px;
+  cursor: pointer;
+  box-shadow: 0 6px 0 #8b6914, 0 10px 30px #00000055;
+  transition: all 0.1s;
+}
+
+.next-level-btn:active { transform: translateY(3px);  box-shadow: 0 3px 0 #8b6914; }
+
+.restart-btn {
+  font-family: 'Fredoka One', cursive;
+  font-size: 20px;
+  color: #a8e6a8;
+  background: #ffffff12;
+  border: 2px solid #7fff7f44;
+  border-radius: 50px;
+  padding: 14px 28px;
+  cursor: pointer;
+  transition: all 0.1s;
+}
+
+.restart-btn:active { transform: translateY(2px); }
+
+/* ===== ALL CLEAR SCREEN ===== */
+#all-clear-screen {
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 24px;
+  padding: 40px;
+}
+
+.trophy {
+  font-size: 110px;
+  animation: trophySpin 1.5s ease-in-out infinite alternate;
+  filter: drop-shadow(0 0 30px #ffd70088);
+}
+
+@keyframes trophySpin {
+  from { transform: rotate(-8deg) scale(1); }
+  to   { transform: rotate(8deg)  scale(1.08); }
+}
+
+.all-clear-title {
+  font-family: 'Fredoka One', cursive;
+  font-size: 68px;
+  color: #ffd700;
+  text-shadow: 0 4px 0 #b8860b, 0 10px 30px #00000099;
+  animation: winPop 0.5s ease-out;
+}
+
+.all-clear-msg {
+  color: #a8e6a8;
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 1.7;
+}
+
+/* ===== CONFETTI ===== */
+.confetti-container {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 10;
+  overflow: hidden;
+}
+
+.confetti-piece {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  top: -20px;
+  animation: confettiFall linear forwards;
+}
+
+@keyframes confettiFall {
+  to {
+    transform: translateY(110vh) rotate(720deg);
+    opacity: 0;
+  }
+}
