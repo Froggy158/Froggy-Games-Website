@@ -32,3 +32,5 @@ Fork the project.
 Create your feature branch.
 
 Open a Pull Request!
+
+If you want to download the apk file then check the releases
