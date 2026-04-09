@@ -11,7 +11,9 @@ Lily Pad Leap: A classic puzzle-platformer where timing is everything.
 🚀 How to Play
 You don't need to install anything! Simply follow these steps:
 
-Visit the GitHub Pages link (Coming Soon!).
+Visit the GitHub Pages link below.
+
+https://froggy158.github.io/Froggy-Games-Website/
 
 Choose your game from the main menu.
 
