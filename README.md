@@ -2,11 +2,11 @@
 Welcome to the ultimate lily pad for web-based entertainment! Froggy Games is a curated collection of fun, lightweight mini-games designed to be played right in your browser.
 
 🕹️ Featured Games
-Froggy Jump: How high can you go before you fall off the leaf?
+Frog Jump: How high can you go before you fall off the leaf?
 
-Fly Catcher: A fast-paced reflex game—eat as many flies as you can in 60 seconds!
+Solve The Frog: A minimalist arcade puzzle game where you guide or trap a frog through logic-based challenges to earn coins and unlock new skins.
 
-Lily Pad Leap: A classic puzzle-platformer where timing is everything.
+Catch The Frog: Catch the Frog is a fast-paced, reflex-based arcade game where you tap randomly appearing frogs on a 3x3 grid to score points before time runs out.
 
 🚀 How to Play
 You don't need to install anything! Simply follow these steps:
@@ -35,4 +35,4 @@ Create your feature branch.
 
 Open a Pull Request!
 
-If you want to download the apk file then check the releases
+Ready to play? Grab the APK right now from the Releases section! 🚀
