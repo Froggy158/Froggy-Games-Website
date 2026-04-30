@@ -1,6 +1,8 @@
 🐸 Froggy Games Website
 Welcome to the ultimate lily pad for web-based entertainment! Froggy Games is a curated collection of fun, lightweight mini-games designed to be played right in your browser.
 
+Version 4.0.0 for Froggy Games is here!
+
 🕹️ Featured Games
 Frog Jump: How high can you go before you fall off the leaf?
 
