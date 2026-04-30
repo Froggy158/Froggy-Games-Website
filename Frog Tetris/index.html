@@ -1,0 +1,881 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Frog Tetris 🐸</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+  *, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0; padding: 0;
+    -webkit-user-select: none; user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+    touch-action: manipulation;
+  }
+
+  html, body {
+    width: 100%; height: 100%;
+    overflow: hidden;
+    background: #0a1a0f;
+    font-family: 'Press Start 2P', monospace;
+  }
+
+  #gameWrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    min-height: 100vh;
+    padding: 8px 4px 4px;
+  }
+
+  .top-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    max-width: 520px;
+    margin-bottom: 8px;
+  }
+
+  .btn-home {
+    background: #1a3a1f;
+    border: 2px solid #2a6a2f;
+    color: #5dfc5d;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 10px;
+    padding: 6px 10px;
+    cursor: pointer;
+    outline: none;
+    text-shadow: 0 0 6px #5dfc5d88;
+    box-shadow: 0 0 8px #2a6a2f66;
+  }
+
+  .game-title {
+    font-size: 13px;
+    color: #5dfc5d;
+    text-shadow: 0 0 12px #5dfc5d, 0 0 24px #3dc83d;
+    letter-spacing: 1px;
+  }
+
+  #mainArea {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    justify-content: center;
+    width: 100%;
+    max-width: 520px;
+  }
+
+  #leftPanel {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-width: 90px;
+  }
+
+  #rightPanel {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-width: 90px;
+  }
+
+  .panel-box {
+    background: #0d2414;
+    border: 2px solid #2a5a2f;
+    padding: 8px;
+    box-shadow: 0 0 10px #1a4a1f44, inset 0 0 10px #00000033;
+  }
+
+  .panel-label {
+    font-size: 7px;
+    color: #4ab84a;
+    margin-bottom: 6px;
+    text-shadow: 0 0 6px #4ab84a88;
+    letter-spacing: 1px;
+  }
+
+  .panel-value {
+    font-size: 11px;
+    color: #8fff8f;
+    text-shadow: 0 0 8px #8fff8f99;
+  }
+
+  #nextCanvas, #holdCanvas {
+    display: block;
+    image-rendering: pixelated;
+  }
+
+  #gameCanvas {
+    display: block;
+    image-rendering: pixelated;
+    box-shadow: 0 0 20px #1a7a2a55, 0 0 40px #0f5a1a33;
+    border: 2px solid #2a5a2f;
+    flex-shrink: 0;
+  }
+
+  /* Mobile Controls — always visible */
+  #mobileControls {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    margin-top: 12px;
+    width: 100%;
+    max-width: 360px;
+  }
+
+  .ctrl-row {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+  }
+
+  .ctrl-btn {
+    width: 70px; height: 60px;
+    background: #0d2414;
+    border: 2px solid #2a6a2f;
+    color: #5dfc5d;
+    font-size: 22px;
+    cursor: pointer;
+    outline: none;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 0 8px #1a4a1f55;
+    -webkit-user-select: none; user-select: none;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .ctrl-btn-wide {
+    width: 100px; height: 60px;
+    font-size: 9px;
+    font-family: 'Press Start 2P', monospace;
+  }
+
+  @media (max-width: 480px) {
+    #leftPanel, #rightPanel { min-width: 70px; }
+    .panel-value { font-size: 9px; }
+    .panel-label { font-size: 6px; }
+    .game-title { font-size: 9px; }
+    .btn-home { font-size: 8px; padding: 5px 7px; }
+  }
+
+  @media (max-width: 380px) {
+    #leftPanel, #rightPanel { min-width: 60px; }
+    .ctrl-btn { width: 58px; height: 52px; font-size: 18px; }
+    .ctrl-btn-wide { width: 124px; font-size: 9px; }
+  }
+
+  /* Overlay screens */
+  #overlay {
+    position: fixed;
+    inset: 0;
+    background: #00000099;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    gap: 16px;
+  }
+
+  #overlay.hidden { display: none; }
+
+  .overlay-title {
+    font-size: 22px;
+    color: #5dfc5d;
+    text-shadow: 0 0 20px #5dfc5d, 0 0 40px #3dc83d;
+    text-align: center;
+    line-height: 1.5;
+  }
+
+  .overlay-sub {
+    font-size: 10px;
+    color: #8fff8f;
+    text-align: center;
+    line-height: 2;
+    text-shadow: 0 0 8px #8fff8f66;
+    animation: blink 1.2s step-end infinite;
+  }
+
+  .overlay-score {
+    font-size: 11px;
+    color: #5dfc5d;
+    text-align: center;
+    line-height: 2;
+  }
+
+  @keyframes blink {
+    50% { opacity: 0; }
+  }
+
+  .frog-deco {
+    font-size: 40px;
+    animation: hop 0.8s ease-in-out infinite alternate;
+  }
+
+  @keyframes hop {
+    from { transform: translateY(0); }
+    to { transform: translateY(-10px); }
+  }
+</style>
+</head>
+<body>
+<div id="gameWrapper">
+  <div class="top-bar">
+    <button class="btn-home" onclick="window.location.href='../index.html'">🏠 Home</button>
+    <div class="game-title">🐸 FROG TETRIS</div>
+    <div style="width:70px"></div>
+  </div>
+
+  <div id="mainArea">
+    <!-- Left Panel -->
+    <div id="leftPanel">
+      <div class="panel-box">
+        <div class="panel-label">SCORE</div>
+        <div class="panel-value" id="scoreDisplay">0</div>
+      </div>
+      <div class="panel-box">
+        <div class="panel-label">LEVEL</div>
+        <div class="panel-value" id="levelDisplay">1</div>
+      </div>
+      <div class="panel-box">
+        <div class="panel-label">LINES</div>
+        <div class="panel-value" id="linesDisplay">0</div>
+      </div>
+    </div>
+
+    <!-- Game Canvas -->
+    <canvas id="gameCanvas"></canvas>
+
+    <!-- Right Panel -->
+    <div id="rightPanel">
+      <div class="panel-box">
+        <div class="panel-label">NEXT</div>
+        <canvas id="nextCanvas" width="80" height="80"></canvas>
+      </div>
+      <div class="panel-box">
+        <div class="panel-label">HOLD</div>
+        <canvas id="holdCanvas" width="80" height="80"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Mobile Controls -->
+  <div id="mobileControls">
+    <div class="ctrl-row">
+      <button class="ctrl-btn" id="btnLeft">←</button>
+      <button class="ctrl-btn" id="btnDown">↓</button>
+      <button class="ctrl-btn" id="btnRight">→</button>
+    </div>
+    <div class="ctrl-row">
+      <button class="ctrl-btn ctrl-btn-wide" id="btnHold">HOLD</button>
+      <button class="ctrl-btn ctrl-btn-wide" id="btnRotate">🔄 ROTATE</button>
+      <button class="ctrl-btn ctrl-btn-wide" id="btnDrop">DROP</button>
+    </div>
+  </div>
+</div>
+
+<!-- Overlay -->
+<div id="overlay">
+  <div class="frog-deco">🐸</div>
+  <div class="overlay-title" id="overlayTitle">FROG TETRIS</div>
+  <div class="overlay-score" id="overlayScore"></div>
+  <div class="overlay-sub" id="overlaySub">TAP OR PRESS ENTER</div>
+</div>
+
+<script>
+// ===================== CONSTANTS =====================
+const COLS = 10, ROWS = 20;
+const BLOCK = (() => {
+  // Responsive block size
+  const maxH = Math.floor((window.innerHeight - 160) / ROWS);
+  const maxW = Math.floor((window.innerWidth - 200) / COLS);
+  return Math.max(20, Math.min(28, Math.min(maxH, maxW)));
+})();
+
+const COLORS = [
+  null,
+  { fill: '#1aaa3a', stroke: '#5dfc5d', glow: '#5dfc5d' }, // I - bright green
+  { fill: '#0d7a2a', stroke: '#3dc83d', glow: '#3dc83d' }, // O - mid green
+  { fill: '#1a6a10', stroke: '#6eff4a', glow: '#6eff4a' }, // T - lime
+  { fill: '#0a5a18', stroke: '#2ddc6d', glow: '#2ddc6d' }, // S - teal-green
+  { fill: '#157a30', stroke: '#8fff8f', glow: '#8fff8f' }, // Z - pale green
+  { fill: '#0c6a20', stroke: '#4adc4a', glow: '#4adc4a' }, // J - green
+  { fill: '#1a8a28', stroke: '#a0ffa0', glow: '#a0ffa0' }, // L - soft green
+];
+
+const TETROMINOES = [
+  null,
+  [[0,0,0,0],[1,1,1,1],[0,0,0,0],[0,0,0,0]], // I
+  [[2,2],[2,2]],                               // O
+  [[0,3,0],[3,3,3],[0,0,0]],                   // T
+  [[0,4,4],[4,4,0],[0,0,0]],                   // S
+  [[5,5,0],[0,5,5],[0,0,0]],                   // Z
+  [[6,0,0],[6,6,6],[0,0,0]],                   // J
+  [[0,0,7],[7,7,7],[0,0,0]],                   // L
+];
+
+const SCORE_TABLE = [0, 100, 300, 500, 800];
+
+// ===================== CANVAS SETUP =====================
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+canvas.width = COLS * BLOCK;
+canvas.height = ROWS * BLOCK;
+
+const nextCanvas = document.getElementById('nextCanvas');
+const nextCtx = nextCanvas.getContext('2d');
+const holdCanvas = document.getElementById('holdCanvas');
+const holdCtx = holdCanvas.getContext('2d');
+
+// ===================== GAME STATE =====================
+let grid, currentPiece, nextPiece, heldPiece, canHold;
+let score, level, lines, gameOver, paused, started;
+let dropTimer, dropInterval;
+let particles = [];
+let fireflies = [];
+let clearAnim = null; // { rows, timer, frogs }
+let shakeTimer = 0;
+
+// ===================== FIREFLIES =====================
+function initFireflies() {
+  fireflies = [];
+  for (let i = 0; i < 18; i++) {
+    fireflies.push({
+      x: Math.random() * canvas.width,
+      y: Math.random() * canvas.height,
+      r: Math.random() * 2 + 1,
+      vx: (Math.random() - 0.5) * 0.4,
+      vy: (Math.random() - 0.5) * 0.4,
+      alpha: Math.random(),
+      dAlpha: (Math.random() * 0.02 + 0.005) * (Math.random() < 0.5 ? 1 : -1),
+      color: Math.random() < 0.7 ? '#7fff00' : '#ffff44',
+    });
+  }
+}
+
+function updateFireflies() {
+  fireflies.forEach(f => {
+    f.x += f.vx; f.y += f.vy;
+    f.alpha += f.dAlpha;
+    if (f.alpha > 1 || f.alpha < 0) f.dAlpha *= -1;
+    if (f.x < 0) f.x = canvas.width;
+    if (f.x > canvas.width) f.x = 0;
+    if (f.y < 0) f.y = canvas.height;
+    if (f.y > canvas.height) f.y = 0;
+  });
+}
+
+function drawFireflies() {
+  fireflies.forEach(f => {
+    ctx.save();
+    ctx.globalAlpha = f.alpha * 0.6;
+    ctx.shadowBlur = 8; ctx.shadowColor = f.color;
+    ctx.fillStyle = f.color;
+    ctx.beginPath();
+    ctx.arc(f.x, f.y, f.r, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  });
+}
+
+// ===================== DRAW HELPERS =====================
+function drawLilyPad(ctx, x, y, size, colorObj) {
+  const s = size - 2;
+  const cx = x + size / 2, cy = y + size / 2;
+  const r = s / 2;
+  ctx.save();
+  // Glow
+  ctx.shadowBlur = 10; ctx.shadowColor = colorObj.glow;
+  // Pad base
+  ctx.beginPath();
+  ctx.arc(cx, cy, r, 0, Math.PI * 2);
+  ctx.fillStyle = colorObj.fill;
+  ctx.fill();
+  // Notch (lily pad shape)
+  ctx.beginPath();
+  ctx.moveTo(cx, cy);
+  ctx.arc(cx, cy, r, -Math.PI * 0.25, Math.PI * 0.1);
+  ctx.closePath();
+  ctx.fillStyle = '#0a1a0f';
+  ctx.fill();
+  // Rim
+  ctx.beginPath();
+  ctx.arc(cx, cy, r, 0, Math.PI * 2);
+  ctx.strokeStyle = colorObj.stroke;
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+  // Vein lines
+  ctx.globalAlpha = 0.3;
+  ctx.strokeStyle = colorObj.stroke;
+  ctx.lineWidth = 0.8;
+  for (let a = 0; a < Math.PI * 2; a += Math.PI / 3) {
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.lineTo(cx + Math.cos(a) * r * 0.9, cy + Math.sin(a) * r * 0.9);
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function drawBackground() {
+  // Dark swamp gradient
+  const grad = ctx.createLinearGradient(0, 0, 0, canvas.height);
+  grad.addColorStop(0, '#0a1a0d');
+  grad.addColorStop(1, '#04100a');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  // Water ripple effect (subtle horizontal lines)
+  const t = Date.now() / 1800;
+  ctx.save();
+  ctx.globalAlpha = 0.04;
+  ctx.strokeStyle = '#3dc83d';
+  ctx.lineWidth = 1;
+  for (let row = 0; row < ROWS; row++) {
+    const y = row * BLOCK + BLOCK / 2 + Math.sin(t + row * 0.4) * 1.5;
+    ctx.beginPath();
+    ctx.moveTo(0, y);
+    ctx.lineTo(canvas.width, y);
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function drawGrid() {
+  if (!grid) return; // guard: grid not yet initialised
+  for (let r = 0; r < ROWS; r++) {
+    for (let c = 0; c < COLS; c++) {
+      const v = grid[r][c];
+      if (v) {
+        drawLilyPad(ctx, c * BLOCK, r * BLOCK, BLOCK, COLORS[v]);
+      } else {
+        ctx.save();
+        ctx.globalAlpha = 0.07;
+        ctx.strokeStyle = '#2a5a2f';
+        ctx.strokeRect(c * BLOCK + 0.5, r * BLOCK + 0.5, BLOCK - 1, BLOCK - 1);
+        ctx.restore();
+      }
+    }
+  }
+}
+
+function drawGhost() {
+  if (!currentPiece) return;
+  let ghostY = currentPiece.y;
+  while (!collision(currentPiece.matrix, currentPiece.x, ghostY + 1)) ghostY++;
+  if (ghostY === currentPiece.y) return;
+  ctx.save();
+  ctx.globalAlpha = 0.25;
+  currentPiece.matrix.forEach((row, dr) => {
+    row.forEach((v, dc) => {
+      if (v) {
+        const px = (currentPiece.x + dc) * BLOCK;
+        const py = (ghostY + dr) * BLOCK;
+        drawLilyPad(ctx, px, py, BLOCK, COLORS[v]);
+      }
+    });
+  });
+  ctx.restore();
+}
+
+function drawPiece() {
+  if (!currentPiece) return;
+  currentPiece.matrix.forEach((row, dr) => {
+    row.forEach((v, dc) => {
+      if (v) {
+        const px = (currentPiece.x + dc) * BLOCK;
+        const py = (currentPiece.y + dr) * BLOCK;
+        drawLilyPad(ctx, px, py, BLOCK, COLORS[v]);
+      }
+    });
+  });
+}
+
+function drawClearAnim() {
+  if (!clearAnim) return;
+  const { rows, timer, frogs } = clearAnim;
+  const alpha = Math.min(1, timer / 8);
+  rows.forEach(r => {
+    ctx.save();
+    ctx.globalAlpha = alpha * 0.6;
+    ctx.fillStyle = '#5dfc5d';
+    ctx.shadowBlur = 20; ctx.shadowColor = '#5dfc5d';
+    ctx.fillRect(0, r * BLOCK, canvas.width, BLOCK);
+    ctx.restore();
+    // Draw frogs
+    frogs.forEach(f => {
+      if (f.row === r) {
+        ctx.save();
+        ctx.font = `${Math.floor(BLOCK * 0.8)}px serif`;
+        ctx.globalAlpha = alpha;
+        ctx.fillText('🐸', f.x * BLOCK + BLOCK * 0.05, (r + 0.85) * BLOCK);
+        ctx.restore();
+      }
+    });
+  });
+}
+
+function drawPreview(ctx, matrix, colorVal) {
+  ctx.clearRect(0, 0, 80, 80);
+  if (!matrix) return;
+  const cols = matrix[0].length, rows = matrix.length;
+  const bs = Math.floor(Math.min(80 / cols, 80 / rows)) - 2;
+  const ox = Math.floor((80 - cols * bs) / 2);
+  const oy = Math.floor((80 - rows * bs) / 2);
+  matrix.forEach((row, r) => {
+    row.forEach((v, c) => {
+      if (v) drawLilyPad(ctx, ox + c * bs, oy + r * bs, bs, COLORS[colorVal || v]);
+    });
+  });
+}
+
+// ===================== PARTICLES =====================
+function spawnParticles(rows) {
+  rows.forEach(r => {
+    for (let c = 0; c < COLS; c++) {
+      for (let i = 0; i < 3; i++) {
+        particles.push({
+          x: (c + 0.5) * BLOCK,
+          y: (r + 0.5) * BLOCK,
+          vx: (Math.random() - 0.5) * 4,
+          vy: (Math.random() - 1.5) * 3,
+          life: 1,
+          size: Math.random() * 5 + 2,
+          color: Math.random() < 0.6 ? '#5dfc5d' : '#ffff44',
+        });
+      }
+    }
+  });
+}
+
+function updateParticles() {
+  particles = particles.filter(p => p.life > 0);
+  particles.forEach(p => {
+    p.x += p.vx; p.y += p.vy;
+    p.vy += 0.1;
+    p.life -= 0.035;
+  });
+}
+
+function drawParticles() {
+  particles.forEach(p => {
+    ctx.save();
+    ctx.globalAlpha = p.life;
+    ctx.shadowBlur = 6; ctx.shadowColor = p.color;
+    ctx.fillStyle = p.color;
+    ctx.fillRect(p.x - p.size / 2, p.y - p.size / 2, p.size, p.size);
+    ctx.restore();
+  });
+}
+
+// ===================== PIECE LOGIC =====================
+function randomPiece() {
+  const idx = Math.floor(Math.random() * 7) + 1;
+  return {
+    matrix: TETROMINOES[idx].map(r => [...r]),
+    x: Math.floor(COLS / 2) - Math.floor(TETROMINOES[idx][0].length / 2),
+    y: 0,
+    colorIdx: idx,
+  };
+}
+
+function rotate(matrix) {
+  const N = matrix.length;
+  const M = matrix[0].length;
+  const res = Array.from({ length: M }, () => Array(N).fill(0));
+  for (let r = 0; r < N; r++)
+    for (let c = 0; c < M; c++)
+      res[c][N - 1 - r] = matrix[r][c];
+  return res;
+}
+
+function collision(matrix, px, py) {
+  for (let r = 0; r < matrix.length; r++) {
+    for (let c = 0; c < matrix[r].length; c++) {
+      if (!matrix[r][c]) continue;
+      const nr = py + r, nc = px + c;
+      if (nr >= ROWS || nc < 0 || nc >= COLS) return true;
+      if (nr >= 0 && grid[nr][nc]) return true;
+    }
+  }
+  return false;
+}
+
+function lockPiece() {
+  currentPiece.matrix.forEach((row, dr) => {
+    row.forEach((v, dc) => {
+      if (v) {
+        const r = currentPiece.y + dr, c = currentPiece.x + dc;
+        if (r >= 0) grid[r][c] = v;
+      }
+    });
+  });
+  currentPiece = null; // hide piece while clearing/spawning
+  canHold = true;
+  checkLines(); // will call spawnPiece() itself after delay (or immediately)
+}
+
+function checkLines() {
+  const fullRows = [];
+  for (let r = 0; r < ROWS; r++) {
+    if (grid[r].every(v => v !== 0)) fullRows.push(r);
+  }
+  if (fullRows.length === 0) {
+    spawnPiece(); // no lines cleared — spawn immediately
+    return;
+  }
+
+  spawnParticles(fullRows);
+
+  // Build frogs for animation
+  const frogs = [];
+  fullRows.forEach(row => {
+    for (let c = 0; c < COLS; c++) {
+      if (Math.random() < 0.35) frogs.push({ row, x: c });
+    }
+    if (frogs.filter(f => f.row === row).length === 0)
+      frogs.push({ row, x: Math.floor(COLS / 2) });
+  });
+
+  clearAnim = { rows: fullRows, timer: 18, frogs };
+
+  setTimeout(() => {
+    fullRows.sort((a, b) => b - a).forEach(r => {
+      grid.splice(r, 1);
+      grid.unshift(Array(COLS).fill(0));
+    });
+    clearAnim = null;
+
+    const count = fullRows.length;
+    const pts = SCORE_TABLE[count] * level;
+    score += pts;
+    lines += count;
+    level = Math.floor(lines / 10) + 1;
+    dropInterval = Math.max(80, 800 - (level - 1) * 70);
+
+    if (count === 4) shakeTimer = 15;
+
+    updateUI();
+    spawnPiece(); // spawn AFTER grid mutation is done
+  }, 350);
+}
+
+function spawnPiece() {
+  currentPiece = nextPiece || randomPiece();
+  nextPiece = randomPiece();
+  drawPreview(nextCtx, nextPiece.matrix, nextPiece.colorIdx);
+  if (collision(currentPiece.matrix, currentPiece.x, currentPiece.y)) {
+    triggerGameOver();
+  }
+}
+
+// ===================== HOLD =====================
+function holdPiece() {
+  if (!canHold) return;
+  canHold = false;
+  if (!heldPiece) {
+    heldPiece = { matrix: TETROMINOES[currentPiece.colorIdx].map(r => [...r]), colorIdx: currentPiece.colorIdx };
+    spawnPiece();
+  } else {
+    const tmp = heldPiece;
+    heldPiece = { matrix: TETROMINOES[currentPiece.colorIdx].map(r => [...r]), colorIdx: currentPiece.colorIdx };
+    currentPiece = {
+      matrix: tmp.matrix.map(r => [...r]),
+      x: Math.floor(COLS / 2) - Math.floor(tmp.matrix[0].length / 2),
+      y: 0,
+      colorIdx: tmp.colorIdx,
+    };
+  }
+  drawPreview(holdCtx, heldPiece.matrix, heldPiece.colorIdx);
+}
+
+// ===================== MOVEMENT =====================
+function moveLeft() { if (!collision(currentPiece.matrix, currentPiece.x - 1, currentPiece.y)) currentPiece.x--; }
+function moveRight() { if (!collision(currentPiece.matrix, currentPiece.x + 1, currentPiece.y)) currentPiece.x++; }
+function softDrop() {
+  if (!collision(currentPiece.matrix, currentPiece.x, currentPiece.y + 1)) {
+    currentPiece.y++;
+    score++;
+    updateUI();
+  } else lockPiece();
+  dropTimer = 0;
+}
+function hardDrop() {
+  let dropped = 0;
+  while (!collision(currentPiece.matrix, currentPiece.x, currentPiece.y + 1)) {
+    currentPiece.y++;
+    dropped++;
+  }
+  score += dropped * 2;
+  updateUI();
+  lockPiece();
+  dropTimer = 0;
+}
+function rotatePiece() {
+  const rotated = rotate(currentPiece.matrix);
+  const kicks = [0, -1, 1, -2, 2];
+  for (const kick of kicks) {
+    if (!collision(rotated, currentPiece.x + kick, currentPiece.y)) {
+      currentPiece.matrix = rotated;
+      currentPiece.x += kick;
+      return;
+    }
+  }
+}
+
+// ===================== GAME INIT =====================
+function initGame() {
+  grid = Array.from({ length: ROWS }, () => Array(COLS).fill(0));
+  score = 0; level = 1; lines = 0;
+  gameOver = false; paused = false; canHold = true;
+  heldPiece = null;
+  particles = []; clearAnim = null; shakeTimer = 0;
+  dropInterval = 800; dropTimer = 0;
+  initFireflies();
+  nextPiece = randomPiece();
+  spawnPiece();
+  holdCtx.clearRect(0, 0, 80, 80);
+  updateUI();
+}
+
+function triggerGameOver() {
+  gameOver = true;
+  const overlay = document.getElementById('overlay');
+  document.getElementById('overlayTitle').textContent = 'GAME OVER';
+  document.getElementById('overlayScore').innerHTML = `SCORE: ${score}\nLEVEL: ${level}\nLINES: ${lines}`;
+  document.getElementById('overlaySub').textContent = 'TAP OR PRESS ENTER';
+  overlay.classList.remove('hidden');
+}
+
+function updateUI() {
+  document.getElementById('scoreDisplay').textContent = score;
+  document.getElementById('levelDisplay').textContent = level;
+  document.getElementById('linesDisplay').textContent = lines;
+}
+
+// ===================== GAME LOOP =====================
+let lastTime = 0;
+function gameLoop(ts) {
+  const dt = ts - lastTime;
+  lastTime = ts;
+
+  if (started && !gameOver && !paused) {
+    if (!clearAnim && currentPiece) {
+      dropTimer += dt;
+      if (dropTimer >= dropInterval) {
+        dropTimer = 0;
+        if (!collision(currentPiece.matrix, currentPiece.x, currentPiece.y + 1)) {
+          currentPiece.y++;
+        } else {
+          lockPiece();
+        }
+      }
+    }
+    if (clearAnim) clearAnim.timer--;
+    updateFireflies();
+    updateParticles();
+    if (shakeTimer > 0) shakeTimer--;
+  }
+
+  // Render
+  ctx.save();
+  if (shakeTimer > 0) {
+    const s = shakeTimer * 1.2;
+    ctx.translate((Math.random() - 0.5) * s, (Math.random() - 0.5) * s);
+  }
+  drawBackground();
+  drawFireflies();
+  drawGrid();
+  if (started && !gameOver) {
+    if (currentPiece) {
+      drawGhost();
+      drawPiece();
+    }
+    drawClearAnim();
+    drawParticles();
+  }
+  ctx.restore();
+
+  requestAnimationFrame(gameLoop);
+}
+
+// ===================== INPUT =====================
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter') {
+    if (!started || gameOver) {
+      started = true;
+      initGame();
+      document.getElementById('overlay').classList.add('hidden');
+    }
+    return;
+  }
+  if (!started || gameOver) return;
+  if (e.key === 'p' || e.key === 'P') {
+    paused = !paused;
+    return;
+  }
+  if (paused) return;
+  if (clearAnim || !currentPiece) return;
+  switch (e.key) {
+    case 'ArrowLeft':  e.preventDefault(); moveLeft(); break;
+    case 'ArrowRight': e.preventDefault(); moveRight(); break;
+    case 'ArrowDown':  e.preventDefault(); softDrop(); break;
+    case 'ArrowUp':    e.preventDefault(); rotatePiece(); break;
+    case ' ':          e.preventDefault(); hardDrop(); break;
+    case 'c': case 'C': holdPiece(); break;
+  }
+});
+
+// Mobile button helpers — prevent repeated triggers
+function mobileAction(fn) {
+  return (e) => {
+    e.preventDefault();
+    if (!started || gameOver || paused || clearAnim || !currentPiece) return;
+    fn();
+  };
+}
+
+document.getElementById('btnLeft').addEventListener('touchstart', mobileAction(moveLeft), { passive: false });
+document.getElementById('btnRight').addEventListener('touchstart', mobileAction(moveRight), { passive: false });
+document.getElementById('btnRotate').addEventListener('touchstart', mobileAction(rotatePiece), { passive: false });
+document.getElementById('btnDown').addEventListener('touchstart', mobileAction(softDrop), { passive: false });
+document.getElementById('btnDrop').addEventListener('touchstart', mobileAction(hardDrop), { passive: false });
+document.getElementById('btnHold').addEventListener('touchstart', mobileAction(holdPiece), { passive: false });
+
+// Also support click for desktop testing
+document.getElementById('btnLeft').addEventListener('click', mobileAction(moveLeft));
+document.getElementById('btnRight').addEventListener('click', mobileAction(moveRight));
+document.getElementById('btnRotate').addEventListener('click', mobileAction(rotatePiece));
+document.getElementById('btnDown').addEventListener('click', mobileAction(softDrop));
+document.getElementById('btnDrop').addEventListener('click', mobileAction(hardDrop));
+document.getElementById('btnHold').addEventListener('click', mobileAction(holdPiece));
+
+// Overlay tap/click to start (mobile + desktop)
+function startOrRestart() {
+  if (!started || gameOver) {
+    started = true;
+    initGame();
+    document.getElementById('overlay').classList.add('hidden');
+  }
+}
+document.getElementById('overlay').addEventListener('touchstart', e => {
+  e.preventDefault(); startOrRestart();
+}, { passive: false });
+document.getElementById('overlay').addEventListener('click', startOrRestart);
+
+// Prevent context menu & zoom
+document.addEventListener('contextmenu', e => e.preventDefault());
+document.addEventListener('gesturestart', e => e.preventDefault());
+document.addEventListener('gesturechange', e => e.preventDefault());
+
+// ===================== START =====================
+initFireflies();
+requestAnimationFrame(gameLoop);
+</script>
+</body>
+</html>

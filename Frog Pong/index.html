@@ -1,0 +1,824 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Frog Pong 🐸</title>
+<style>
+  /* ===== RESET & BASE ===== */
+  *, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0; padding: 0;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    user-select: none;
+    -webkit-text-size-adjust: none;
+  }
+
+  html, body {
+    width: 100%; height: 100%;
+    overflow: hidden;
+    background: #000;
+    touch-action: none;
+  }
+
+  body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Courier New', monospace;
+  }
+
+  /* ===== HOME BUTTON ===== */
+  .btn-home {
+    position: fixed;
+    top: 10px; left: 10px;
+    z-index: 999;
+    background: #0a1a0a;
+    color: #39ff14;
+    border: 2px solid #39ff14;
+    padding: 6px 12px;
+    font-family: 'Courier New', monospace;
+    font-size: 14px;
+    cursor: pointer;
+    image-rendering: pixelated;
+    box-shadow: 0 0 8px #39ff1488;
+    outline: none;
+    -webkit-appearance: none;
+  }
+
+  /* ===== CANVAS WRAPPER ===== */
+  #gameWrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  #gameCanvas {
+    display: block;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+  }
+
+  /* ===== MOBILE CONTROLS ===== */
+  #mobileControls {
+    display: none;
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    height: 130px;
+    pointer-events: none;
+    z-index: 100;
+  }
+
+  .ctrl-side {
+    position: absolute;
+    bottom: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    pointer-events: all;
+  }
+
+  .ctrl-side.left  { left: 10px; }
+  .ctrl-side.right { right: 10px; }
+
+  .ctrl-btn {
+    width: 60px; height: 55px;
+    background: rgba(0,30,0,0.85);
+    border: 2px solid #39ff14;
+    border-radius: 6px;
+    color: #39ff14;
+    font-size: 22px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 0 10px #39ff1455;
+    -webkit-appearance: none;
+    outline: none;
+    touch-action: none;
+  }
+
+  @media (max-width: 768px) {
+    #mobileControls { display: flex; }
+    .btn-home { font-size: 12px; padding: 5px 10px; }
+  }
+</style>
+</head>
+<body>
+<button class="btn-home" onclick="window.location.href='../index.html'">🏠 Home</button>
+
+<div id="gameWrapper">
+  <canvas id="gameCanvas"></canvas>
+</div>
+
+<!-- Mobile controls -->
+<div id="mobileControls">
+  <div class="ctrl-side left">
+    <button class="ctrl-btn" id="p1Up">▲</button>
+    <button class="ctrl-btn" id="p1Down">▼</button>
+  </div>
+  <div class="ctrl-side right">
+    <button class="ctrl-btn" id="p2Up">▲</button>
+    <button class="ctrl-btn" id="p2Down">▼</button>
+  </div>
+</div>
+
+<script>
+// ============================================================
+//  FROG PONG  –  Single HTML5 Canvas game
+// ============================================================
+
+// ===== CANVAS SETUP =====
+const canvas = document.getElementById('gameCanvas');
+const ctx    = canvas.getContext('2d');
+
+const BASE_W = 800, BASE_H = 520;
+let scale = 1;
+
+function resize() {
+  const mobileH = window.innerWidth <= 768 ? 130 : 0;
+  const availW  = window.innerWidth;
+  const availH  = window.innerHeight - mobileH;
+  scale = Math.min(availW / BASE_W, availH / BASE_H);
+  canvas.width  = BASE_W;
+  canvas.height = BASE_H;
+  canvas.style.width  = (BASE_W * scale) + 'px';
+  canvas.style.height = (BASE_H * scale) + 'px';
+}
+resize();
+window.addEventListener('resize', resize);
+
+// ===== CONSTANTS =====
+const WIN_SCORE    = 10;
+const PADDLE_W     = 18, PADDLE_H = 80;
+const BALL_R       = 9;
+const INIT_SPEED   = 5;
+const SPEED_INC    = 0.25;
+const MAX_SPEED    = 14;
+const AI_DELAYS    = { easy: 0.04, medium: 0.08, hard: 0.16 };
+
+// ===== GAME STATE =====
+let state = 'START';   // START | MODE | DIFFICULTY | PLAYING | PAUSED | WIN
+let mode  = '2P';      // '1P' | '2P'
+let aiDiff = 'medium';
+
+let score1 = 0, score2 = 0;
+let flashTimer  = 0;   // screen flash
+let shakeTimer  = 0;
+let winner = 0;        // 1 or 2
+
+// ===== SWAMP BG PARTICLES =====
+const bubbles = Array.from({length: 22}, () => ({
+  x: Math.random() * BASE_W,
+  y: BASE_H + Math.random() * 40,
+  r: 2 + Math.random() * 5,
+  vy: -(0.2 + Math.random() * 0.5),
+  alpha: 0.15 + Math.random() * 0.25
+}));
+
+// ===== FLY TRAIL =====
+const flyTrail = [];
+
+// ===== PADDLES (Frogs) =====
+const p1 = { x: 28, y: BASE_H/2 - PADDLE_H/2, vy: 0, tongueAnim: 0, blinkTimer: 0, blinking: false, croak: 0, scoreAnim: 0 };
+const p2 = { x: BASE_W - 28 - PADDLE_W, y: BASE_H/2 - PADDLE_H/2, vy: 0, tongueAnim: 0, blinkTimer: 0, blinking: false, croak: 0, scoreAnim: 0 };
+
+// ===== BALL (Fly) =====
+const fly = { x: BASE_W/2, y: BASE_H/2, vx: INIT_SPEED, vy: 2, speed: INIT_SPEED };
+
+function resetFly(toRight) {
+  fly.x = BASE_W / 2;
+  fly.y = BASE_H / 2;
+  const angle = (Math.random() * 40 - 20) * Math.PI / 180;
+  fly.speed = INIT_SPEED;
+  const dir = toRight ? 1 : -1;
+  fly.vx = dir * fly.speed * Math.cos(angle);
+  fly.vy = fly.speed * Math.sin(angle);
+  flyTrail.length = 0;
+}
+
+// ===== KEYS =====
+const keys = {};
+document.addEventListener('keydown', e => {
+  keys[e.code] = true;
+  if (e.code === 'KeyP' && state === 'PLAYING') { state = 'PAUSED'; }
+  else if (e.code === 'KeyP' && state === 'PAUSED') { state = 'PLAYING'; }
+  if (e.code === 'Enter') handleEnter();
+  if (['ArrowUp','ArrowDown','Space'].includes(e.code)) e.preventDefault();
+});
+document.addEventListener('keyup', e => { keys[e.code] = false; });
+
+// ===== MOBILE CONTROLS =====
+function bindBtn(id, code) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.addEventListener('pointerdown', e => { e.preventDefault(); keys[code] = true; });
+  el.addEventListener('pointerup',   e => { e.preventDefault(); keys[code] = false; });
+  el.addEventListener('pointerleave',e => { keys[code] = false; });
+}
+bindBtn('p1Up',   'KeyW');
+bindBtn('p1Down', 'KeyS');
+bindBtn('p2Up',   'ArrowUp');
+bindBtn('p2Down', 'ArrowDown');
+
+// ===== ENTER HANDLER =====
+function handleEnter() {
+  if (state === 'START')      { state = 'MODE'; }
+  else if (state === 'WIN')   { startGame(); state = 'MODE'; }
+}
+
+// Difficulty/mode buttons via click on canvas
+canvas.addEventListener('click', e => {
+  const rect = canvas.getBoundingClientRect();
+  const cx   = (e.clientX - rect.left) / scale;
+  const cy   = (e.clientY - rect.top)  / scale;
+  handleCanvasClick(cx, cy);
+});
+canvas.addEventListener('touchend', e => {
+  e.preventDefault();
+  const rect = canvas.getBoundingClientRect();
+  const t    = e.changedTouches[0];
+  const cx   = (t.clientX - rect.left) / scale;
+  const cy   = (t.clientY - rect.top)  / scale;
+  handleCanvasClick(cx, cy);
+}, { passive: false });
+
+const menuBtns = [];
+function addBtn(label, x, y, w, h, cb) { menuBtns.push({label,x,y,w,h,cb}); }
+function clearBtns() { menuBtns.length = 0; }
+
+function handleCanvasClick(cx, cy) {
+  for (const b of menuBtns) {
+    if (cx >= b.x && cx <= b.x+b.w && cy >= b.y && cy <= b.y+b.h) {
+      b.cb();
+      return;
+    }
+  }
+  if (state === 'START') { state = 'MODE'; }
+  if (state === 'PAUSED') { state = 'PLAYING'; }
+  if (state === 'WIN') { startGame(); state = 'MODE'; }
+}
+
+// ===== AUDIO (Web Audio) =====
+let audioCtx;
+function getAudio() {
+  if (!audioCtx) { try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e){} }
+  return audioCtx;
+}
+function beep(freq, dur, type='square', vol=0.18) {
+  const a = getAudio(); if (!a) return;
+  try {
+    const osc = a.createOscillator();
+    const gain = a.createGain();
+    osc.connect(gain); gain.connect(a.destination);
+    osc.type = type; osc.frequency.value = freq;
+    gain.gain.setValueAtTime(vol, a.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, a.currentTime + dur);
+    osc.start(); osc.stop(a.currentTime + dur);
+  } catch(e) {}
+}
+function sndHit()   { beep(320, 0.06, 'square', 0.2); }
+function sndScore() { beep(880, 0.12, 'square', 0.25); setTimeout(() => beep(1100, 0.15, 'square', 0.2), 120); }
+function sndWall()  { beep(180, 0.05, 'square', 0.12); }
+function sndWin()   { [523,659,784,1047].forEach((f,i) => setTimeout(() => beep(f, 0.2, 'square', 0.22), i*120)); }
+
+// ===== START GAME =====
+function startGame() {
+  score1 = 0; score2 = 0; winner = 0;
+  p1.y = BASE_H/2 - PADDLE_H/2; p2.y = BASE_H/2 - PADDLE_H/2;
+  p1.tongueAnim = p2.tongueAnim = 0;
+  p1.scoreAnim  = p2.scoreAnim  = 0;
+  resetFly(Math.random() > 0.5);
+}
+
+// ===== AI =====
+function updateAI() {
+  const delay = AI_DELAYS[aiDiff];
+  const target = fly.y - PADDLE_H / 2;
+  const diff   = target - p2.y;
+  p2.y += diff * delay * 60 * (1/60);
+  p2.y = Math.max(0, Math.min(BASE_H - PADDLE_H, p2.y));
+}
+
+// ===== IDLE ANIMATIONS =====
+let idleTimer = 0;
+function updateIdle(dt) {
+  idleTimer += dt;
+  // Blink every 3-5s
+  for (const p of [p1, p2]) {
+    p.blinkTimer -= dt;
+    if (p.blinkTimer <= 0) {
+      p.blinking = true;
+      setTimeout(() => { p.blinking = false; }, 120);
+      p.blinkTimer = 2.5 + Math.random() * 3;
+    }
+    if (p.tongueAnim > 0) p.tongueAnim -= dt * 5;
+    if (p.croak > 0) p.croak -= dt * 3;
+    if (p.scoreAnim > 0) p.scoreAnim -= dt * 2;
+  }
+}
+
+// ===== UPDATE =====
+let lastTime = 0;
+function update(ts) {
+  const dt = Math.min((ts - lastTime) / 1000, 0.05);
+  lastTime = ts;
+
+  updateIdle(dt);
+
+  // Bubbles
+  for (const b of bubbles) {
+    b.y += b.vy;
+    if (b.y < -10) { b.y = BASE_H + 5; b.x = Math.random() * BASE_W; }
+  }
+
+  if (flashTimer  > 0) flashTimer  -= dt;
+  if (shakeTimer  > 0) shakeTimer  -= dt;
+
+  if (state !== 'PLAYING') return;
+
+  // ---- PADDLE MOVEMENT ----
+  const SPEED = 7;
+  if (keys['KeyW'])     p1.y -= SPEED;
+  if (keys['KeyS'])     p1.y += SPEED;
+  p1.y = Math.max(0, Math.min(BASE_H - PADDLE_H, p1.y));
+
+  if (mode === '2P') {
+    if (keys['ArrowUp'])   p2.y -= SPEED;
+    if (keys['ArrowDown']) p2.y += SPEED;
+    p2.y = Math.max(0, Math.min(BASE_H - PADDLE_H, p2.y));
+  } else {
+    updateAI();
+  }
+
+  // ---- FLY MOVEMENT ----
+  fly.x += fly.vx;
+  fly.y += fly.vy;
+
+  // Trail
+  flyTrail.push({ x: fly.x, y: fly.y, t: 1.0 });
+  if (flyTrail.length > 18) flyTrail.shift();
+  for (const t of flyTrail) t.t -= dt * 4;
+
+  // Top/bottom walls
+  if (fly.y - BALL_R <= 0) {
+    fly.y = BALL_R;
+    fly.vy = Math.abs(fly.vy);
+    sndWall();
+  }
+  if (fly.y + BALL_R >= BASE_H) {
+    fly.y = BASE_H - BALL_R;
+    fly.vy = -Math.abs(fly.vy);
+    sndWall();
+  }
+
+  // ---- PADDLE COLLISIONS ----
+  function paddleHit(p, side) {
+    const relY = (fly.y - (p.y + PADDLE_H/2)) / (PADDLE_H/2);
+    const bounce = relY * 1.1 + (Math.random() * 0.2 - 0.1);
+    fly.speed = Math.min(fly.speed + SPEED_INC, MAX_SPEED);
+    const angle = bounce * (Math.PI / 3.5);
+    fly.vx = side * fly.speed * Math.cos(angle);
+    fly.vy = fly.speed * Math.sin(angle);
+    p.tongueAnim = 1.0;
+    sndHit();
+  }
+
+  // P1 paddle
+  if (fly.vx < 0 &&
+      fly.x - BALL_R <= p1.x + PADDLE_W &&
+      fly.x + BALL_R >= p1.x &&
+      fly.y + BALL_R >= p1.y &&
+      fly.y - BALL_R <= p1.y + PADDLE_H) {
+    fly.x = p1.x + PADDLE_W + BALL_R;
+    paddleHit(p1, 1);
+  }
+
+  // P2 paddle
+  if (fly.vx > 0 &&
+      fly.x + BALL_R >= p2.x &&
+      fly.x - BALL_R <= p2.x + PADDLE_W &&
+      fly.y + BALL_R >= p2.y &&
+      fly.y - BALL_R <= p2.y + PADDLE_H) {
+    fly.x = p2.x - BALL_R;
+    paddleHit(p2, -1);
+  }
+
+  // ---- SCORING ----
+  if (fly.x < -20) {
+    score2++;
+    p2.scoreAnim = 1; p2.croak = 1;
+    flashTimer = 0.35; shakeTimer = 0.25;
+    sndScore();
+    if (score2 >= WIN_SCORE) { winner = 2; state = 'WIN'; sndWin(); return; }
+    resetFly(true);
+  }
+  if (fly.x > BASE_W + 20) {
+    score1++;
+    p1.scoreAnim = 1; p1.croak = 1;
+    flashTimer = 0.35; shakeTimer = 0.25;
+    sndScore();
+    if (score1 >= WIN_SCORE) { winner = 1; state = 'WIN'; sndWin(); return; }
+    resetFly(false);
+  }
+}
+
+// ===== DRAW HELPERS =====
+function pixelFont(size) { ctx.font = `${size}px 'Courier New', monospace`; }
+
+function drawPixelRect(x, y, w, h, color) {
+  ctx.fillStyle = color;
+  ctx.fillRect(Math.round(x), Math.round(y), w, h);
+}
+
+function glowText(text, x, y, color, glow, size=28, align='center') {
+  pixelFont(size);
+  ctx.textAlign = align;
+  ctx.shadowColor = glow; ctx.shadowBlur = 18;
+  ctx.fillStyle = color;
+  ctx.fillText(text, x, y);
+  ctx.shadowBlur = 0;
+}
+
+// ===== DRAW FROG =====
+function drawFrog(p, side) {
+  const x = Math.round(p.x);
+  const y = Math.round(p.y);
+  const W = PADDLE_W, H = PADDLE_H;
+
+  // Body
+  const bodyColor = '#1a7a1a';
+  const eyeColor  = '#d4f542';
+  const pupilColor= '#000';
+
+  // Main body (rounded look via stacked rects)
+  ctx.shadowColor = '#39ff14'; ctx.shadowBlur = 12;
+  drawPixelRect(x+2, y+2, W-4, H-4, bodyColor);
+  drawPixelRect(x,   y+8, W,   H-16, '#1fa31f');
+  drawPixelRect(x+1, y+3, W-2, H-6, '#22bb22');
+  ctx.shadowBlur = 0;
+
+  // Spots
+  ctx.fillStyle = '#145214';
+  ctx.fillRect(x+4,  y+12, 4, 4);
+  ctx.fillRect(x+4,  y+26, 3, 3);
+  ctx.fillRect(x+4,  y+44, 4, 4);
+  ctx.fillRect(x+4,  y+58, 3, 3);
+
+  // Eyes (on top)
+  const eyeX = side === 1 ? x + W - 4 : x + 4;
+  const eyeOff = 6;
+  for (let i = 0; i < 2; i++) {
+    const ey = y + H * 0.22 + i * H * 0.55;
+    ctx.fillStyle = eyeColor;
+    ctx.beginPath(); ctx.arc(eyeX, ey, 5, 0, Math.PI*2); ctx.fill();
+    if (!p.blinking) {
+      ctx.fillStyle = pupilColor;
+      ctx.beginPath(); ctx.arc(eyeX + (side===1?1:-1), ey, 2.5, 0, Math.PI*2); ctx.fill();
+    } else {
+      ctx.fillStyle = '#1a7a1a';
+      ctx.fillRect(eyeX - 5, ey - 1, 10, 2);
+    }
+    // eye glow
+    ctx.shadowColor = '#d4f542'; ctx.shadowBlur = 8;
+    ctx.strokeStyle = '#d4f542'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.arc(eyeX, ey, 5, 0, Math.PI*2); ctx.stroke();
+    ctx.shadowBlur = 0;
+  }
+
+  // Croak bubble
+  if (p.croak > 0.01) {
+    const bx = side === 1 ? x + W + 8  : x - 30;
+    const by = y - 6;
+    ctx.globalAlpha = Math.min(p.croak, 1);
+    ctx.fillStyle = '#aaffaa';
+    ctx.beginPath(); ctx.arc(bx+10, by, 14, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = '#004400';
+    pixelFont(11); ctx.textAlign='center';
+    ctx.fillText('ribbit', bx+10, by+4);
+    ctx.globalAlpha = 1;
+  }
+
+  // Score reaction
+  if (p.scoreAnim > 0.01) {
+    const stars = ['✨','⭐','🌟'];
+    const sa = p.scoreAnim;
+    for (let i = 0; i < 3; i++) {
+      const angle = (i / 3) * Math.PI * 2 + (1-sa) * 2;
+      const dist  = (1-sa) * 38;
+      const sx = x + W/2 + Math.cos(angle) * dist;
+      const sy = y + H/2 + Math.sin(angle) * dist;
+      ctx.globalAlpha = sa;
+      pixelFont(14); ctx.textAlign='center';
+      ctx.fillStyle='#ffe94a';
+      ctx.fillText(stars[i], sx, sy);
+      ctx.globalAlpha = 1;
+    }
+  }
+
+  // TONGUE
+  if (p.tongueAnim > 0.01) {
+    const ta    = p.tongueAnim;
+    const len   = ta * 55;
+    const ty    = y + H / 2;
+    const tx    = side === 1 ? x + W : x;
+    const dir   = side === 1 ? 1 : -1;
+    ctx.shadowColor = '#ff4466'; ctx.shadowBlur = 10;
+    ctx.strokeStyle = '#ff4466';
+    ctx.lineWidth   = 6;
+    ctx.lineCap     = 'round';
+    ctx.beginPath();
+    ctx.moveTo(tx, ty);
+    ctx.lineTo(tx + dir * len, ty + Math.sin(ta * Math.PI) * 12);
+    ctx.stroke();
+    // tip
+    ctx.fillStyle = '#ff2244';
+    ctx.beginPath();
+    ctx.arc(tx + dir * len, ty + Math.sin(ta * Math.PI) * 12, 5, 0, Math.PI*2);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+  }
+}
+
+// ===== DRAW FLY =====
+function drawFly() {
+  // Trail
+  for (let i = 0; i < flyTrail.length; i++) {
+    const t = flyTrail[i];
+    if (t.t <= 0) continue;
+    ctx.globalAlpha = t.t * 0.45;
+    ctx.fillStyle = '#aaff44';
+    ctx.beginPath();
+    ctx.arc(t.x, t.y, BALL_R * t.t * 0.7, 0, Math.PI*2);
+    ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+
+  const fx = Math.round(fly.x), fy = Math.round(fly.y);
+
+  // Glow
+  ctx.shadowColor = '#aaff44'; ctx.shadowBlur = 20;
+  ctx.fillStyle = '#ccff55';
+  ctx.beginPath(); ctx.arc(fx, fy, BALL_R+2, 0, Math.PI*2); ctx.fill();
+  ctx.shadowBlur = 0;
+
+  // Body
+  ctx.fillStyle = '#333300';
+  ctx.beginPath(); ctx.arc(fx, fy, BALL_R, 0, Math.PI*2); ctx.fill();
+
+  // Wings
+  ctx.fillStyle = 'rgba(200,255,150,0.55)';
+  ctx.beginPath(); ctx.ellipse(fx-4, fy-6, 7, 4, -0.4, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(fx+4, fy-6, 7, 4, 0.4,  0, Math.PI*2); ctx.fill();
+
+  // Eyes
+  ctx.fillStyle = '#ff4400';
+  ctx.beginPath(); ctx.arc(fx-3, fy-2, 2, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(fx+3, fy-2, 2, 0, Math.PI*2); ctx.fill();
+}
+
+// ===== DRAW SWAMP BG =====
+function drawBG() {
+  // Base
+  const grad = ctx.createLinearGradient(0, 0, 0, BASE_H);
+  grad.addColorStop(0,   '#050f05');
+  grad.addColorStop(0.5, '#071507');
+  grad.addColorStop(1,   '#0a1e08');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, BASE_W, BASE_H);
+
+  // Lily pad scanlines (subtle)
+  ctx.fillStyle = 'rgba(0,40,0,0.18)';
+  for (let y = 0; y < BASE_H; y += 4) ctx.fillRect(0, y, BASE_W, 2);
+
+  // Bubbles
+  for (const b of bubbles) {
+    ctx.globalAlpha = b.alpha;
+    ctx.strokeStyle = '#39ff14';
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.arc(b.x, b.y, b.r, 0, Math.PI*2); ctx.stroke();
+  }
+  ctx.globalAlpha = 1;
+
+  // Center dashed line
+  ctx.setLineDash([8, 10]);
+  ctx.strokeStyle = 'rgba(57,255,20,0.2)';
+  ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(BASE_W/2, 0); ctx.lineTo(BASE_W/2, BASE_H); ctx.stroke();
+  ctx.setLineDash([]);
+}
+
+// ===== DRAW HUD =====
+function drawHUD() {
+  // Score
+  const s1txt = score1.toString().padStart(2,'0');
+  const s2txt = score2.toString().padStart(2,'0');
+
+  ctx.shadowColor = '#39ff14'; ctx.shadowBlur = 16;
+  pixelFont(46); ctx.textAlign = 'center';
+  ctx.fillStyle = '#39ff14';
+  ctx.fillText(s1txt, BASE_W/2 - 80, 56);
+  ctx.fillText(s2txt, BASE_W/2 + 80, 56);
+  ctx.shadowBlur = 0;
+
+  // Labels
+  pixelFont(13); ctx.fillStyle = '#39991477';
+  ctx.fillText('P1', BASE_W/2 - 80, 72);
+  ctx.fillText(mode==='1P'?'AI':'P2', BASE_W/2 + 80, 72);
+
+  // Win bar indicators
+  const barW = 90, barH = 5, barY = 78;
+  ctx.fillStyle = '#1a3a1a';
+  ctx.fillRect(BASE_W/2 - 80 - barW/2, barY, barW, barH);
+  ctx.fillRect(BASE_W/2 + 80 - barW/2, barY, barW, barH);
+  ctx.fillStyle = '#39ff14';
+  ctx.fillRect(BASE_W/2 - 80 - barW/2, barY, (score1/WIN_SCORE)*barW, barH);
+  ctx.fillRect(BASE_W/2 + 80 - barW/2, barY, (score2/WIN_SCORE)*barW, barH);
+}
+
+// ===== SCREEN FLASH =====
+function drawFlash() {
+  if (flashTimer > 0) {
+    ctx.fillStyle = `rgba(57,255,20,${flashTimer * 0.25})`;
+    ctx.fillRect(0, 0, BASE_W, BASE_H);
+  }
+}
+
+// ===== MENU SCREENS =====
+function drawPanel(title, lines, btnDefs) {
+  // Overlay
+  ctx.fillStyle = 'rgba(0,8,0,0.82)';
+  ctx.fillRect(0, 0, BASE_W, BASE_H);
+
+  // Border
+  ctx.shadowColor = '#39ff14'; ctx.shadowBlur = 30;
+  ctx.strokeStyle = '#39ff14'; ctx.lineWidth = 3;
+  ctx.strokeRect(60, 50, BASE_W-120, BASE_H-100);
+  ctx.shadowBlur = 0;
+
+  // Inner border
+  ctx.strokeStyle = 'rgba(57,255,20,0.25)'; ctx.lineWidth = 1;
+  ctx.strokeRect(66, 56, BASE_W-132, BASE_H-112);
+
+  // Title frog emoji
+  pixelFont(34); ctx.textAlign='center'; ctx.fillStyle='#39ff14';
+  ctx.shadowColor='#39ff14'; ctx.shadowBlur=20;
+  ctx.fillText(title, BASE_W/2, 120);
+  ctx.shadowBlur=0;
+
+  // Lines
+  for (let i=0; i<lines.length; i++) {
+    pixelFont(lines[i].size||16);
+    ctx.fillStyle = lines[i].color || '#88dd88';
+    ctx.textAlign = 'center';
+    ctx.fillText(lines[i].text, BASE_W/2, 160 + i*38);
+  }
+
+  // Buttons
+  clearBtns();
+  for (const b of btnDefs) {
+    const bx = BASE_W/2 - b.w/2, by = b.y - b.h + 6;
+    // highlight if selected
+    const hl = b.selected;
+    ctx.fillStyle = hl ? 'rgba(57,255,20,0.25)' : 'rgba(0,20,0,0.7)';
+    ctx.strokeStyle = hl ? '#39ff14' : '#1a6a1a';
+    ctx.lineWidth = hl ? 2 : 1;
+    ctx.shadowColor = '#39ff14'; ctx.shadowBlur = hl ? 14 : 4;
+    ctx.fillRect(bx, by, b.w, b.h);
+    ctx.strokeRect(bx, by, b.w, b.h);
+    ctx.shadowBlur = 0;
+    pixelFont(b.size||18);
+    ctx.fillStyle = hl ? '#39ff14' : '#88ee88';
+    ctx.textAlign='center';
+    ctx.fillText(b.label, BASE_W/2, b.y);
+    addBtn(b.label, bx, by, b.w, b.h, b.cb);
+  }
+}
+
+function drawStart() {
+  drawPanel('🐸 FROG PONG 🐸',
+    [
+      { text: 'A RETRO ARCADE EXPERIENCE', size:14, color:'#559955' },
+      { text: '', size:10 },
+    ],
+    [
+      { label:'▶  PRESS ENTER TO START', y:310, w:340, h:44, size:18, selected:true,
+        cb: ()=>{ state='MODE'; } },
+      { label:'TAP TO START', y:370, w:220, h:38, size:15, selected:false,
+        cb: ()=>{ state='MODE'; } },
+    ]
+  );
+  // Animated frogs on either side
+  const t = Date.now()/1000;
+  ctx.fillStyle = '#22aa22';
+  pixelFont(48); ctx.textAlign='left';
+  ctx.fillText('🐸', 80 + Math.sin(t*1.2)*6, 280);
+  ctx.textAlign='right';
+  ctx.fillText('🐸', BASE_W-80 + Math.sin(t*1.5+1)*6, 280);
+}
+
+function drawMode() {
+  clearBtns();
+  drawPanel('SELECT MODE',
+    [{ text:'How many players?', size:18, color:'#aaeeaa' }],
+    [
+      { label:'🐸  1 PLAYER  (vs AI)', y:250, w:300, h:46, size:18, selected: mode==='1P',
+        cb: ()=>{ mode='1P'; state='DIFFICULTY'; } },
+      { label:'🐸🐸  2 PLAYERS', y:320, w:300, h:46, size:18, selected: mode==='2P',
+        cb: ()=>{ mode='2P'; startGame(); state='PLAYING'; } },
+    ]
+  );
+}
+
+function drawDifficulty() {
+  clearBtns();
+  drawPanel('AI DIFFICULTY',
+    [{ text:'Choose wisely, ribbit!', size:16, color:'#aaeeaa' }],
+    [
+      { label:'🟢  EASY',   y:240, w:240, h:44, size:18, selected: aiDiff==='easy',
+        cb: ()=>{ aiDiff='easy';   startGame(); state='PLAYING'; } },
+      { label:'🟡  MEDIUM', y:302, w:240, h:44, size:18, selected: aiDiff==='medium',
+        cb: ()=>{ aiDiff='medium'; startGame(); state='PLAYING'; } },
+      { label:'🔴  HARD',   y:364, w:240, h:44, size:18, selected: aiDiff==='hard',
+        cb: ()=>{ aiDiff='hard';   startGame(); state='PLAYING'; } },
+    ]
+  );
+}
+
+function drawPause() {
+  ctx.fillStyle = 'rgba(0,8,0,0.72)';
+  ctx.fillRect(0,0,BASE_W,BASE_H);
+  ctx.shadowColor='#39ff14'; ctx.shadowBlur=24;
+  glowText('⏸ PAUSED', BASE_W/2, BASE_H/2 - 20, '#39ff14', '#39ff14', 40);
+  ctx.shadowBlur=0;
+  pixelFont(16); ctx.textAlign='center'; ctx.fillStyle='#559955';
+  ctx.fillText('Press P or tap to continue', BASE_W/2, BASE_H/2 + 30);
+  clearBtns();
+  addBtn('resume', 0, 0, BASE_W, BASE_H, ()=>{ state='PLAYING'; });
+}
+
+function drawWin() {
+  drawPanel(`🏆 PLAYER ${winner} WINS! 🏆`,
+    [
+      { text: winner===1 ? score1+' — '+score2 : score1+' — '+score2, size:38, color:'#39ff14' },
+      { text: 'RIBBIT! GG! 🐸', size:20, color:'#aaeeaa' },
+    ],
+    [
+      { label:'▶  PLAY AGAIN', y:330, w:260, h:46, size:18, selected:true,
+        cb: ()=>{ startGame(); state='MODE'; } },
+    ]
+  );
+}
+
+// ===== RENDER =====
+function render() {
+  // Shake
+  ctx.save();
+  if (shakeTimer > 0) {
+    const mag = shakeTimer * 6;
+    ctx.translate(Math.random()*mag - mag/2, Math.random()*mag - mag/2);
+  }
+
+  drawBG();
+
+  if (state === 'PLAYING' || state === 'PAUSED') {
+    drawFly();
+    drawFrog(p1, 1);
+    drawFrog(p2, -1);
+    drawHUD();
+    drawFlash();
+    if (state === 'PAUSED') drawPause();
+  } else if (state === 'START') {
+    drawStart();
+  } else if (state === 'MODE') {
+    drawMode();
+  } else if (state === 'DIFFICULTY') {
+    drawDifficulty();
+  } else if (state === 'WIN') {
+    drawFrog(p1, 1);
+    drawFrog(p2, -1);
+    drawHUD();
+    drawWin();
+  }
+
+  ctx.restore();
+}
+
+// ===== GAME LOOP =====
+function loop(ts) {
+  update(ts);
+  render();
+  requestAnimationFrame(loop);
+}
+
+// Disable context menu
+document.addEventListener('contextmenu', e => e.preventDefault());
+
+// Kickoff
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>

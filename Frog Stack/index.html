@@ -1,0 +1,815 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
+<title>Frog Stack</title>
+<style>
+  /* ===================== RESET & BASE ===================== */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    width: 100%; height: 100%;
+    overflow: hidden;
+    background: #0a1a0a;
+    font-family: 'Courier New', monospace;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: none;
+  }
+  img { pointer-events: none; user-select: none; -webkit-user-drag: none; }
+
+  /* ===================== LAYOUT ===================== */
+  #game-wrapper {
+    position: fixed; inset: 0;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+  }
+
+  /* ===================== HOME BUTTON ===================== */
+  .btn-home {
+    position: fixed; top: 12px; left: 12px; z-index: 999;
+    background: #1a3a1a; border: 2px solid #39ff14;
+    color: #39ff14; font-family: 'Courier New', monospace;
+    font-size: 14px; padding: 6px 12px; cursor: pointer;
+    border-radius: 4px; outline: none;
+    image-rendering: pixelated;
+    box-shadow: 0 0 8px #39ff1444;
+    transition: none;
+  }
+
+  /* ===================== CANVAS ===================== */
+  #gameCanvas {
+    display: block;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+    cursor: pointer;
+  }
+
+  /* ===================== HUD ===================== */
+  #hud {
+    position: fixed; top: 12px; right: 12px;
+    display: flex; flex-direction: column; align-items: flex-end;
+    gap: 4px; z-index: 100; pointer-events: none;
+  }
+  .hud-label {
+    font-size: 10px; color: #4a8a4a; letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+  .hud-value {
+    font-size: 22px; color: #39ff14;
+    text-shadow: 0 0 10px #39ff1488;
+    font-weight: bold; line-height: 1;
+  }
+
+  /* ===================== OVERLAYS ===================== */
+  .overlay {
+    position: fixed; inset: 0;
+    display: none; flex-direction: column;
+    align-items: center; justify-content: center;
+    z-index: 200; pointer-events: none;
+  }
+  .overlay.active { display: flex; pointer-events: auto; }
+
+  .overlay-box {
+    background: rgba(0,0,0,0.85);
+    border: 3px solid #39ff14;
+    box-shadow: 0 0 40px #39ff1444, inset 0 0 20px rgba(57,255,20,0.05);
+    padding: 40px 50px;
+    text-align: center;
+    max-width: 340px; width: 90%;
+    image-rendering: pixelated;
+  }
+
+  .game-title {
+    font-size: 42px; font-weight: 900;
+    color: #39ff14;
+    text-shadow: 0 0 20px #39ff14, 3px 3px 0 #1a5a00, 6px 6px 0 #0d3300;
+    letter-spacing: 4px;
+    line-height: 1;
+    margin-bottom: 8px;
+  }
+  .game-subtitle {
+    font-size: 11px; color: #4a8a4a;
+    letter-spacing: 6px; margin-bottom: 30px;
+    text-transform: uppercase;
+  }
+  .frog-icon { font-size: 56px; margin-bottom: 16px; display: block; }
+  .prompt-text {
+    font-size: 15px; color: #aaffaa;
+    letter-spacing: 2px; margin-bottom: 8px;
+    animation: blink 1s step-start infinite;
+  }
+  .sub-prompt { font-size: 11px; color: #4a8a4a; letter-spacing: 1px; }
+  .score-display {
+    font-size: 52px; color: #39ff14;
+    font-weight: 900;
+    text-shadow: 0 0 20px #39ff14;
+    margin: 10px 0;
+  }
+  .high-score-display {
+    font-size: 13px; color: #88cc88;
+    margin-bottom: 24px; letter-spacing: 2px;
+  }
+  .gameover-title {
+    font-size: 28px; color: #ff4444;
+    font-weight: 900; letter-spacing: 4px; margin-bottom: 20px;
+    text-shadow: 0 0 15px #ff4444;
+  }
+  .pause-title {
+    font-size: 32px; color: #ffcc00;
+    font-weight: 900; letter-spacing: 6px;
+    text-shadow: 0 0 15px #ffcc00;
+    margin-bottom: 20px;
+  }
+
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+
+  /* ===================== SCANLINE OVERLAY ===================== */
+  #scanlines {
+    position: fixed; inset: 0; pointer-events: none; z-index: 50;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0,0,0,0.15) 2px,
+      rgba(0,0,0,0.15) 4px
+    );
+  }
+</style>
+</head>
+<body>
+
+<button class="btn-home" onclick="window.location.href='../index.html'">🏠 Home</button>
+
+<div id="hud">
+  <div class="hud-label">Score</div>
+  <div class="hud-value" id="hud-score">0</div>
+  <div class="hud-label" style="margin-top:6px">Best</div>
+  <div class="hud-value" id="hud-hi" style="font-size:16px;color:#88cc88;text-shadow:none">0</div>
+</div>
+
+<!-- START SCREEN -->
+<div class="overlay active" id="overlay-start">
+  <div class="overlay-box">
+    <span class="frog-icon">🐸</span>
+    <div class="game-title">FROG<br>STACK</div>
+    <div class="game-subtitle">arcade edition</div>
+    <div class="prompt-text">TAP TO STACK</div>
+    <div class="sub-prompt">SPACE / ENTER to begin</div>
+  </div>
+</div>
+
+<!-- GAMEOVER SCREEN -->
+<div class="overlay" id="overlay-gameover">
+  <div class="overlay-box">
+    <div class="gameover-title">GAME OVER</div>
+    <div class="score-display" id="go-score">0</div>
+    <div class="high-score-display" id="go-hi">BEST: 0</div>
+    <div class="prompt-text">TAP TO RETRY</div>
+    <div class="sub-prompt">ENTER to restart</div>
+  </div>
+</div>
+
+<!-- PAUSE SCREEN -->
+<div class="overlay" id="overlay-pause">
+  <div class="overlay-box">
+    <div class="pause-title">PAUSED</div>
+    <div class="sub-prompt" style="color:#aaffaa;font-size:14px">P to resume</div>
+  </div>
+</div>
+
+<div id="game-wrapper">
+  <canvas id="gameCanvas"></canvas>
+</div>
+
+<div id="scanlines"></div>
+
+<script>
+// =====================================================================
+//  FROG STACK — Single File HTML5 Canvas Game
+//  Controls: Space/Click/Tap = drop | Enter = start/restart | P = pause
+// =====================================================================
+
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+
+// ── Overlays & HUD ──
+const overlayStart    = document.getElementById('overlay-start');
+const overlayGameover = document.getElementById('overlay-gameover');
+const overlayPause    = document.getElementById('overlay-pause');
+const hudScore        = document.getElementById('hud-score');
+const hudHi           = document.getElementById('hud-hi');
+const goScore         = document.getElementById('go-score');
+const goHi            = document.getElementById('go-hi');
+
+// ── Canvas sizing ──
+const BASE_W = 400;
+const BASE_H = 600;
+let scale = 1;
+
+function resizeCanvas() {
+  const maxW = window.innerWidth;
+  const maxH = window.innerHeight;
+  scale = Math.min(maxW / BASE_W, maxH / BASE_H);
+  canvas.width  = BASE_W;
+  canvas.height = BASE_H;
+  canvas.style.width  = (BASE_W * scale) + 'px';
+  canvas.style.height = (BASE_H * scale) + 'px';
+}
+resizeCanvas();
+window.addEventListener('resize', resizeCanvas);
+
+// ── Game states ──
+const STATE = { START: 0, PLAYING: 1, GAMEOVER: 2, PAUSED: 3 };
+let state = STATE.START;
+
+// ── Persistent storage ──
+let highScore = parseInt(localStorage.getItem('frogstack_hi') || '0');
+
+// ── Game variables ──
+let score, stack, movingBlock, particles;
+let shakeFrames, shakeAmt;
+let gameSpeed, dropDir, dropX;
+let lastTime, animId;
+let perfectFlash; // frames of perfect flash
+
+// ── Block definitions ──
+const BLOCK_H = 24;       // pixel height of each block
+const START_W = 260;      // initial block width
+const STACK_BOTTOM = BASE_H - 60; // y-position of ground
+
+// ── Colors ──
+const COLORS = [
+  '#39ff14','#00ff88','#00ffcc','#aaff00','#66ff33',
+  '#22dd00','#00cc66','#55ff55','#33ff99','#11ff77'
+];
+const LILY_COLORS = ['#1a5c1a','#1a6622','#225522','#1a4d1a','#2d6e2d'];
+
+// ── Audio (Web Audio API) ──
+let audioCtx = null;
+
+function getAudio() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  return audioCtx;
+}
+
+function playTone(freq, type, dur, vol = 0.3, detuneEnd = 0) {
+  try {
+    const ac = getAudio();
+    const osc = ac.createOscillator();
+    const gain = ac.createGain();
+    osc.connect(gain); gain.connect(ac.destination);
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, ac.currentTime);
+    if (detuneEnd) osc.frequency.exponentialRampToValueAtTime(detuneEnd, ac.currentTime + dur);
+    gain.gain.setValueAtTime(vol, ac.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + dur);
+    osc.start(); osc.stop(ac.currentTime + dur);
+  } catch(e){}
+}
+
+function sfxDrop()    { playTone(220, 'square', 0.12, 0.25); playTone(330, 'square', 0.08, 0.15); }
+function sfxPerfect() {
+  playTone(523, 'square', 0.1, 0.3);
+  setTimeout(() => playTone(659, 'square', 0.1, 0.3), 60);
+  setTimeout(() => playTone(784, 'square', 0.15, 0.35), 120);
+}
+function sfxSlice()   { playTone(180, 'sawtooth', 0.18, 0.2, 80); }
+function sfxGameover(){
+  playTone(330, 'sawtooth', 0.15, 0.3, 110);
+  setTimeout(() => playTone(220, 'sawtooth', 0.2, 0.3, 80), 150);
+  setTimeout(() => playTone(110, 'sawtooth', 0.3, 0.4, 60), 350);
+}
+
+// ─────────────────────────────────────────────
+//  INIT / RESET
+// ─────────────────────────────────────────────
+function initGame() {
+  score = 0;
+  particles = [];
+  shakeFrames = 0; shakeAmt = 0;
+  perfectFlash = 0;
+  gameSpeed = 2.5;
+  dropDir = 1;
+
+  // Ground / base block
+  stack = [{
+    x: (BASE_W - START_W) / 2,
+    y: STACK_BOTTOM,
+    w: START_W,
+    h: BLOCK_H,
+    color: COLORS[0],
+    lilyColor: LILY_COLORS[0],
+    isFrog: false
+  }];
+
+  spawnMovingBlock();
+  updateHUD();
+}
+
+function spawnMovingBlock() {
+  const topBlock = stack[stack.length - 1];
+  const w = topBlock.w;
+  // Alternate direction
+  dropDir = Math.random() < 0.5 ? 1 : -1;
+  dropX = dropDir === 1 ? -w : BASE_W;
+
+  movingBlock = {
+    x: dropX,
+    y: topBlock.y - BLOCK_H,
+    w: w,
+    h: BLOCK_H,
+    color: COLORS[score % COLORS.length],
+    lilyColor: LILY_COLORS[score % LILY_COLORS.length],
+    isFrog: score % 3 !== 0  // every 3rd is lily pad, rest are frogs
+  };
+}
+
+// ─────────────────────────────────────────────
+//  DROP LOGIC
+// ─────────────────────────────────────────────
+const PERFECT_MARGIN = 4; // pixels
+
+function dropBlock() {
+  if (state !== STATE.PLAYING) return;
+
+  const top = stack[stack.length - 1];
+  const mb  = movingBlock;
+
+  // ── Overlap check ──
+  const overlapLeft  = Math.max(mb.x, top.x);
+  const overlapRight = Math.min(mb.x + mb.w, top.x + top.w);
+  const overlapW     = overlapRight - overlapLeft;
+
+  if (overlapW <= 0) {
+    // Complete miss → game over
+    sfxGameover();
+    triggerShake(8, 18);
+    endGame();
+    return;
+  }
+
+  const diff = Math.abs(mb.x - top.x);
+  const isPerfect = diff <= PERFECT_MARGIN;
+
+  if (isPerfect) {
+    // Snap to perfect
+    mb.x = top.x;
+    sfxPerfect();
+    spawnParticles(mb.x + mb.w / 2, mb.y, 18, '#39ff14');
+    spawnParticles(mb.x + mb.w / 2, mb.y, 8, '#ffffff');
+    perfectFlash = 12;
+    score += 2; // bonus
+  } else {
+    // Cut overhanging part
+    // Determine cut side
+    const cutW = mb.w - overlapW;
+    const cutX = (mb.x < top.x) ? mb.x : overlapRight;
+    // Spawn cut particles
+    spawnParticles(cutX + (mb.x < top.x ? 0 : cutW/2), mb.y + BLOCK_H/2, 8, mb.color);
+    sfxSlice();
+    sfxDrop();
+    // Trim block to overlap only
+    mb.x = overlapLeft;
+    mb.w = overlapW;
+    score += 1;
+  }
+
+  // Push to stack
+  stack.push({ ...mb });
+
+  // Scroll stack down if tower grows tall
+  scrollStack();
+
+  // Increase speed
+  gameSpeed = 2.5 + score * 0.07;
+  if (gameSpeed > 9) gameSpeed = 9;
+
+  updateHUD();
+  spawnMovingBlock();
+}
+
+function scrollStack() {
+  // If top block y < threshold, shift everything down
+  const threshold = 200;
+  const top = stack[stack.length - 1];
+  if (top.y < threshold) {
+    const shift = threshold - top.y;
+    stack.forEach(b => b.y += shift);
+  }
+}
+
+// ─────────────────────────────────────────────
+//  PARTICLES
+// ─────────────────────────────────────────────
+function spawnParticles(x, y, count, color) {
+  for (let i = 0; i < count; i++) {
+    const angle = (Math.PI * 2 * i) / count + (Math.random() - 0.5) * 0.8;
+    const speed = 1.5 + Math.random() * 3;
+    particles.push({
+      x, y,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed - 1,
+      life: 1, decay: 0.03 + Math.random() * 0.04,
+      size: 2 + Math.random() * 3,
+      color
+    });
+  }
+}
+
+function updateParticles() {
+  for (let i = particles.length - 1; i >= 0; i--) {
+    const p = particles[i];
+    p.x += p.vx; p.y += p.vy;
+    p.vy += 0.12; // gravity
+    p.life -= p.decay;
+    if (p.life <= 0) particles.splice(i, 1);
+  }
+}
+
+function drawParticles() {
+  particles.forEach(p => {
+    ctx.save();
+    ctx.globalAlpha = p.life;
+    ctx.fillStyle = p.color;
+    ctx.fillRect(Math.round(p.x - p.size/2), Math.round(p.y - p.size/2), Math.round(p.size), Math.round(p.size));
+    ctx.restore();
+  });
+}
+
+// ─────────────────────────────────────────────
+//  SCREEN SHAKE
+// ─────────────────────────────────────────────
+function triggerShake(frames, amt) {
+  shakeFrames = frames; shakeAmt = amt;
+}
+
+// ─────────────────────────────────────────────
+//  DRAWING
+// ─────────────────────────────────────────────
+
+// Swamp background tiles (pre-computed)
+let bgTiles = [];
+function buildBg() {
+  bgTiles = [];
+  for (let i = 0; i < 60; i++) {
+    bgTiles.push({
+      x: Math.random() * BASE_W,
+      y: Math.random() * BASE_H,
+      r: 2 + Math.random() * 8,
+      a: Math.random() * 0.12 + 0.03,
+      phase: Math.random() * Math.PI * 2,
+      speed: 0.005 + Math.random() * 0.01
+    });
+  }
+}
+buildBg();
+
+function drawBackground(t) {
+  // Dark swamp gradient
+  const grad = ctx.createLinearGradient(0, 0, 0, BASE_H);
+  grad.addColorStop(0, '#060e06');
+  grad.addColorStop(0.5, '#0a1a0a');
+  grad.addColorStop(1, '#0d200d');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, BASE_W, BASE_H);
+
+  // Ambient glowing bubbles
+  bgTiles.forEach(tile => {
+    tile.phase += tile.speed;
+    const alpha = tile.a * (0.7 + 0.3 * Math.sin(tile.phase));
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    const rg = ctx.createRadialGradient(tile.x, tile.y, 0, tile.x, tile.y, tile.r);
+    rg.addColorStop(0, '#39ff14');
+    rg.addColorStop(1, 'transparent');
+    ctx.fillStyle = rg;
+    ctx.beginPath();
+    ctx.arc(tile.x, tile.y, tile.r, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  });
+
+  // Horizontal grid lines (retro arcade feel)
+  ctx.save();
+  ctx.strokeStyle = 'rgba(57,255,20,0.04)';
+  ctx.lineWidth = 1;
+  for (let y = 0; y < BASE_H; y += 20) {
+    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(BASE_W, y); ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function drawBlock(block, isMoving) {
+  const { x, y, w, h, color, lilyColor, isFrog } = block;
+  const rx = Math.round(x), ry = Math.round(y), rw = Math.round(w), rh = Math.round(h);
+
+  if (rw <= 0) return;
+
+  // Shadow
+  ctx.save();
+  ctx.globalAlpha = 0.25;
+  ctx.fillStyle = '#000';
+  ctx.fillRect(rx + 3, ry + 3, rw, rh);
+  ctx.restore();
+
+  if (isFrog) {
+    drawFrogBlock(rx, ry, rw, rh, color, isMoving);
+  } else {
+    drawLilyBlock(rx, ry, rw, rh, lilyColor, isMoving);
+  }
+
+  // Glow on moving block
+  if (isMoving) {
+    ctx.save();
+    ctx.globalAlpha = 0.35;
+    ctx.shadowColor = color;
+    ctx.shadowBlur = 12;
+    ctx.fillStyle = color;
+    ctx.fillRect(rx, ry, rw, rh);
+    ctx.restore();
+  }
+}
+
+function drawFrogBlock(x, y, w, h, color, animated) {
+  // Body
+  ctx.fillStyle = color;
+  ctx.fillRect(x, y, w, h);
+
+  // Pixel detail: darker stripe
+  ctx.fillStyle = 'rgba(0,0,0,0.3)';
+  ctx.fillRect(x, y + Math.floor(h * 0.4), w, 2);
+
+  // Eyes (only if wide enough)
+  if (w >= 20) {
+    const eyeY = y + 4;
+    const eyeSize = Math.min(5, Math.floor(w / 10));
+    const eyeSpacing = Math.min(w - eyeSize * 3, w * 0.7);
+    const ex1 = x + Math.floor((w - eyeSpacing) / 2);
+    const ex2 = ex1 + eyeSpacing - eyeSize;
+
+    // Eye whites
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(ex1, eyeY, eyeSize, eyeSize);
+    ctx.fillRect(ex2, eyeY, eyeSize, eyeSize);
+
+    // Pupils
+    ctx.fillStyle = '#111';
+    ctx.fillRect(ex1 + 1, eyeY + 1, Math.max(1, eyeSize - 2), Math.max(1, eyeSize - 2));
+    ctx.fillRect(ex2 + 1, eyeY + 1, Math.max(1, eyeSize - 2), Math.max(1, eyeSize - 2));
+
+    // Smile
+    if (w >= 30) {
+      ctx.fillStyle = 'rgba(0,0,0,0.5)';
+      const sx = x + Math.floor(w / 2) - 4;
+      const smileY = y + h - 7;
+      ctx.fillRect(sx, smileY, 8, 2);
+      ctx.fillRect(sx, smileY, 2, 3);
+      ctx.fillRect(sx + 6, smileY, 2, 3);
+    }
+  }
+
+  // Border
+  ctx.strokeStyle = 'rgba(0,0,0,0.5)';
+  ctx.lineWidth = 1;
+  ctx.strokeRect(x + 0.5, y + 0.5, w - 1, h - 1);
+}
+
+function drawLilyBlock(x, y, w, h, color, animated) {
+  // Lily pad base
+  ctx.fillStyle = color;
+  ctx.fillRect(x, y, w, h);
+
+  // Vein lines
+  ctx.strokeStyle = 'rgba(0,0,0,0.25)';
+  ctx.lineWidth = 1;
+  const cx = x + w / 2;
+  const cy = y + h / 2;
+  // Central vein
+  ctx.beginPath(); ctx.moveTo(cx, y); ctx.lineTo(cx, y + h); ctx.stroke();
+  // Side veins
+  if (w > 40) {
+    ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(x + w * 0.2, y); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(x + w * 0.8, y); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(x + w * 0.1, y + h); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(x + w * 0.9, y + h); ctx.stroke();
+  }
+
+  // Top highlight
+  ctx.fillStyle = 'rgba(255,255,255,0.12)';
+  ctx.fillRect(x, y, w, 4);
+
+  // Border
+  ctx.strokeStyle = 'rgba(0,80,0,0.6)';
+  ctx.lineWidth = 1;
+  ctx.strokeRect(x + 0.5, y + 0.5, w - 1, h - 1);
+}
+
+function drawPerfectFlash() {
+  if (perfectFlash <= 0) return;
+  perfectFlash--;
+  const alpha = perfectFlash / 12 * 0.35;
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  ctx.fillStyle = '#39ff14';
+  ctx.fillRect(0, 0, BASE_W, BASE_H);
+  ctx.restore();
+
+  // "PERFECT!" text
+  if (perfectFlash > 5) {
+    ctx.save();
+    ctx.font = 'bold 22px "Courier New"';
+    ctx.fillStyle = '#fff';
+    ctx.textAlign = 'center';
+    ctx.shadowColor = '#39ff14';
+    ctx.shadowBlur = 15;
+    ctx.fillText('PERFECT!', BASE_W / 2, movingBlock ? movingBlock.y - 10 : BASE_H / 2);
+    ctx.restore();
+  }
+}
+
+function drawGround() {
+  // Water/swamp ground
+  const gy = STACK_BOTTOM + BLOCK_H;
+  ctx.fillStyle = '#0d3b1a';
+  ctx.fillRect(0, gy, BASE_W, BASE_H - gy);
+
+  // Water shimmer
+  ctx.save();
+  ctx.globalAlpha = 0.3;
+  ctx.fillStyle = '#39ff14';
+  for (let x = 0; x < BASE_W; x += 20) {
+    ctx.fillRect(x + ((Date.now() / 200) % 20 | 0), gy + 4, 6, 1);
+  }
+  ctx.restore();
+}
+
+function drawMovingBlockIndicator() {
+  if (!movingBlock) return;
+  const top = stack[stack.length - 1];
+  // Dotted guide line
+  ctx.save();
+  ctx.setLineDash([4, 4]);
+  ctx.strokeStyle = 'rgba(57,255,20,0.2)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(top.x, top.y);
+  ctx.lineTo(top.x, 0);
+  ctx.moveTo(top.x + top.w, top.y);
+  ctx.lineTo(top.x + top.w, 0);
+  ctx.stroke();
+  ctx.restore();
+}
+
+// ─────────────────────────────────────────────
+//  GAME LOOP
+// ─────────────────────────────────────────────
+function gameLoop(timestamp) {
+  if (!lastTime) lastTime = timestamp;
+  const dt = Math.min((timestamp - lastTime) / 16.67, 3); // normalized to 60fps
+  lastTime = timestamp;
+
+  // Move block
+  if (state === STATE.PLAYING && movingBlock) {
+    movingBlock.x += gameSpeed * dropDir * dt;
+    // Bounce off walls
+    if (movingBlock.x + movingBlock.w > BASE_W + 20) dropDir = -1;
+    if (movingBlock.x < -20) dropDir = 1;
+  }
+
+  updateParticles();
+
+  // ── Draw ──
+  let shx = 0, shy = 0;
+  if (shakeFrames > 0) {
+    shakeFrames--;
+    shx = (Math.random() - 0.5) * shakeAmt;
+    shy = (Math.random() - 0.5) * shakeAmt;
+  }
+
+  ctx.save();
+  ctx.translate(Math.round(shx), Math.round(shy));
+
+  drawBackground(timestamp);
+  drawGround();
+
+  // Draw stack (bottom to top, skip base on display)
+  drawMovingBlockIndicator();
+  stack.forEach(b => drawBlock(b, false));
+
+  // Draw moving block
+  if (state === STATE.PLAYING && movingBlock) {
+    drawBlock(movingBlock, true);
+  }
+
+  drawParticles();
+  drawPerfectFlash();
+
+  ctx.restore();
+
+  animId = requestAnimationFrame(gameLoop);
+}
+
+// ─────────────────────────────────────────────
+//  STATE MANAGEMENT
+// ─────────────────────────────────────────────
+function startGame() {
+  initGame();
+  state = STATE.PLAYING;
+  setOverlay(null);
+  lastTime = 0;
+  if (animId) cancelAnimationFrame(animId);
+  animId = requestAnimationFrame(gameLoop);
+}
+
+function endGame() {
+  state = STATE.GAMEOVER;
+  if (score > highScore) {
+    highScore = score;
+    localStorage.setItem('frogstack_hi', highScore);
+  }
+  goScore.textContent = score;
+  goHi.textContent = 'BEST: ' + highScore;
+  updateHUD();
+  setOverlay('gameover');
+}
+
+function togglePause() {
+  if (state === STATE.PLAYING) {
+    state = STATE.PAUSED;
+    setOverlay('pause');
+  } else if (state === STATE.PAUSED) {
+    state = STATE.PLAYING;
+    setOverlay(null);
+    lastTime = 0;
+  }
+}
+
+function setOverlay(which) {
+  [overlayStart, overlayGameover, overlayPause].forEach(o => o.classList.remove('active'));
+  if (which === 'start')    overlayStart.classList.add('active');
+  if (which === 'gameover') overlayGameover.classList.add('active');
+  if (which === 'pause')    overlayPause.classList.add('active');
+}
+
+function updateHUD() {
+  hudScore.textContent = score;
+  hudHi.textContent = Math.max(score, highScore);
+}
+
+// ─────────────────────────────────────────────
+//  INPUT HANDLING
+// ─────────────────────────────────────────────
+function handleAction() {
+  if (state === STATE.START || state === STATE.GAMEOVER) {
+    startGame();
+  } else if (state === STATE.PLAYING) {
+    dropBlock();
+  }
+}
+
+// Keyboard
+document.addEventListener('keydown', e => {
+  if (e.code === 'Space' || e.code === 'Enter') {
+    e.preventDefault();
+    handleAction();
+  }
+  if (e.code === 'KeyP') {
+    if (state === STATE.PLAYING || state === STATE.PAUSED) togglePause();
+  }
+});
+
+// Touch / click on canvas
+canvas.addEventListener('pointerdown', e => {
+  e.preventDefault();
+  handleAction();
+}, { passive: false });
+
+// Click on overlays
+overlayStart.addEventListener('pointerdown', e => { e.preventDefault(); handleAction(); }, { passive: false });
+overlayGameover.addEventListener('pointerdown', e => { e.preventDefault(); handleAction(); }, { passive: false });
+
+// Prevent right-click
+document.addEventListener('contextmenu', e => e.preventDefault());
+
+// Prevent scroll
+document.addEventListener('touchmove', e => e.preventDefault(), { passive: false });
+document.addEventListener('wheel', e => e.preventDefault(), { passive: false });
+
+// ─────────────────────────────────────────────
+//  BOOT
+// ─────────────────────────────────────────────
+function boot() {
+  hudHi.textContent = highScore;
+  setOverlay('start');
+  // Run idle animation loop on start screen
+  initGame();
+  state = STATE.START;
+  animId = requestAnimationFrame(gameLoop);
+}
+
+boot();
+</script>
+</body>
+</html>

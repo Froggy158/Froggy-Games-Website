@@ -1,0 +1,142 @@
+  /* ===== RESET & BASE ===== */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    width: 100%; height: 100%; overflow: hidden;
+    background: #0a0f0a;
+    font-family: 'Courier New', monospace;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+  }
+  img { -webkit-user-drag: none; user-drag: none; pointer-events: none; }
+  * { -webkit-tap-highlight-color: transparent; }
+
+  /* ===== LAYOUT ===== */
+  #gameWrapper {
+    position: relative;
+    width: 100vw; height: 100vh;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    background: #0a0f0a;
+  }
+  #topBar {
+    position: absolute; top: 0; left: 0; right: 0;
+    height: 48px;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 10px;
+    background: rgba(0,0,0,0.85);
+    border-bottom: 2px solid #1a3a1a;
+    z-index: 100;
+  }
+  .btn-home {
+    background: #0d2b0d; color: #4eff6a; border: 2px solid #1a5c1a;
+    font-family: 'Courier New', monospace; font-size: 13px; font-weight: bold;
+    padding: 5px 10px; cursor: pointer; border-radius: 3px;
+    text-shadow: 0 0 8px #4eff6a;
+    outline: none;
+  }
+  .stat-block {
+    display: flex; align-items: center; gap: 12px;
+  }
+  .stat {
+    color: #4eff6a; font-size: 12px; font-weight: bold;
+    text-shadow: 0 0 6px #4eff6a;
+    display: flex; align-items: center; gap: 4px;
+  }
+  .stat span { color: #fff; text-shadow: 0 0 4px #4eff6a; }
+  #waveInfo { color: #ffdd44; font-size: 12px; font-weight: bold; text-shadow: 0 0 6px #ffdd44; }
+
+  #canvasWrapper {
+    position: relative;
+    margin-top: 48px;
+    width: 100%;
+    height: calc(100vh - 48px);
+    display: flex; align-items: center; justify-content: center;
+  }
+  #gameCanvas {
+    display: block;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+    cursor: pointer;
+  }
+
+  /* ===== BOTTOM HUD ===== */
+  #bottomHud {
+    position: absolute; bottom: 0; left: 0; right: 0;
+    height: 72px;
+    background: rgba(0,0,0,0.9);
+    border-top: 2px solid #1a3a1a;
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+    padding: 0 10px;
+    z-index: 100;
+  }
+  .shop-btn {
+    background: #0d2b0d; color: #4eff6a; border: 2px solid #2a7a2a;
+    font-family: 'Courier New', monospace; font-size: 12px; font-weight: bold;
+    padding: 8px 14px; cursor: pointer; border-radius: 3px;
+    text-shadow: 0 0 6px #4eff6a;
+    min-width: 100px; text-align: center;
+    outline: none;
+  }
+  .shop-btn.active { background: #1a4a1a; border-color: #4eff6a; }
+  .coin-display {
+    color: #ffd700; font-size: 14px; font-weight: bold;
+    text-shadow: 0 0 8px #ffd700;
+    min-width: 80px; text-align: center;
+  }
+  #mergeHint {
+    color: #888; font-size: 10px; text-align: center;
+    max-width: 140px; line-height: 1.3;
+  }
+
+  /* ===== OVERLAYS ===== */
+  .overlay {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    background: rgba(0,5,0,0.88);
+    z-index: 200;
+    gap: 16px;
+  }
+  .overlay h1 {
+    color: #4eff6a; font-size: 28px; font-weight: bold;
+    text-shadow: 0 0 20px #4eff6a, 0 0 40px #4eff6a;
+    letter-spacing: 4px;
+    animation: pulse 1.2s ease-in-out infinite;
+  }
+  .overlay h2 { color: #ff4444; font-size: 22px; text-shadow: 0 0 14px #ff4444; }
+  .overlay p { color: #aaffaa; font-size: 13px; text-align: center; max-width: 280px; line-height: 1.7; }
+  .overlay-btn {
+    background: #0d2b0d; color: #4eff6a; border: 2px solid #4eff6a;
+    font-family: 'Courier New', monospace; font-size: 15px; font-weight: bold;
+    padding: 12px 28px; cursor: pointer; border-radius: 3px;
+    text-shadow: 0 0 8px #4eff6a;
+    letter-spacing: 2px; outline: none;
+  }
+  .score-box { color: #ffd700; font-size: 16px; text-shadow: 0 0 8px #ffd700; }
+
+  @keyframes pulse {
+    0%,100% { text-shadow: 0 0 20px #4eff6a, 0 0 40px #4eff6a; }
+    50% { text-shadow: 0 0 30px #4eff6a, 0 0 60px #4eff6a, 0 0 80px #4eff6a; }
+  }
+
+  /* ===== WAVE ANNOUNCE ===== */
+  #waveAnnounce {
+    position: absolute; top: 60px; left: 50%;
+    transform: translateX(-50%);
+    color: #ffdd44; font-size: 20px; font-weight: bold;
+    text-shadow: 0 0 12px #ffdd44;
+    pointer-events: none; z-index: 150;
+    opacity: 0; transition: opacity 0.3s;
+    white-space: nowrap;
+  }
+  /* ===== TOOLTIP ===== */
+  #tooltip {
+    position: absolute;
+    background: rgba(0,20,0,0.95); border: 1px solid #2a7a2a;
+    color: #aaffaa; font-size: 11px; padding: 6px 10px;
+    border-radius: 3px; pointer-events: none; z-index: 300;
+    display: none; line-height: 1.5;
+  }

@@ -1,0 +1,982 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
+<title>Frog Swipe Catch</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+  *, *::before, *::after {
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+    user-select: none;
+  }
+
+  body {
+    margin: 0;
+    padding: 0;
+    background: #050a05;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    overflow: hidden;
+    font-family: 'Press Start 2P', monospace;
+    touch-action: none;
+  }
+
+  #home-bar {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    height: 40px;
+    background: rgba(0,0,0,0.7);
+    display: flex;
+    align-items: center;
+    padding: 0 10px;
+    z-index: 100;
+  }
+
+  .btn-home {
+    background: #1a3a1a;
+    border: 2px solid #3a7a3a;
+    color: #7aff7a;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 8px;
+    padding: 4px 8px;
+    cursor: pointer;
+    outline: none;
+    border-radius: 0;
+    box-shadow: none;
+    transition: none;
+    -webkit-appearance: none;
+  }
+
+  #canvas-wrap {
+    margin-top: 40px;
+    position: relative;
+  }
+
+  #gameCanvas {
+    display: block;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+    cursor: none;
+  }
+
+  /* Overlay screens */
+  #overlay {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0,0,0,0.85);
+    z-index: 10;
+    padding: 20px;
+  }
+
+  #overlay.hidden { display: none; }
+
+  .overlay-title {
+    font-family: 'Press Start 2P', monospace;
+    font-size: clamp(14px, 3vw, 22px);
+    color: #7aff7a;
+    text-shadow: 0 0 10px #3aff3a, 3px 3px 0 #003300;
+    text-align: center;
+    margin-bottom: 20px;
+    line-height: 1.6;
+  }
+
+  .overlay-sub {
+    font-family: 'Press Start 2P', monospace;
+    font-size: clamp(7px, 1.5vw, 10px);
+    color: #aaffaa;
+    text-align: center;
+    line-height: 2;
+    margin-bottom: 24px;
+  }
+
+  .overlay-score {
+    font-family: 'Press Start 2P', monospace;
+    font-size: clamp(9px, 2vw, 13px);
+    color: #ffff00;
+    text-shadow: 2px 2px 0 #666600;
+    margin-bottom: 8px;
+  }
+
+  .press-enter {
+    font-family: 'Press Start 2P', monospace;
+    font-size: clamp(8px, 1.8vw, 11px);
+    color: #ffcc00;
+    animation: blink 1s step-end infinite;
+    text-align: center;
+  }
+
+  .frog-art {
+    font-size: clamp(40px, 8vw, 64px);
+    margin-bottom: 16px;
+    animation: bounce 1s ease-in-out infinite alternate;
+  }
+
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+  }
+
+  @keyframes bounce {
+    from { transform: translateY(0); }
+    to { transform: translateY(-10px); }
+  }
+</style>
+</head>
+<body>
+
+<div id="home-bar">
+  <button class="btn-home" onclick="window.location.href='../index.html'">🏠 Home</button>
+</div>
+
+<div id="canvas-wrap">
+  <canvas id="gameCanvas"></canvas>
+
+  <!-- Start Screen -->
+  <div id="overlay">
+    <div class="frog-art">🐸</div>
+    <div class="overlay-title">FROG SWIPE<br>CATCH</div>
+    <div class="overlay-sub">
+      Catch flies!<br>
+      Miss 3 = Game Over<br>
+      Drag/swipe to move frog
+    </div>
+    <div class="press-enter">PRESS ENTER or TAP</div>
+  </div>
+</div>
+
+<script>
+// =============================================
+// CANVAS SETUP
+// =============================================
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+const wrap = document.getElementById('canvas-wrap');
+const overlay = document.getElementById('overlay');
+
+let W, H;
+
+function resize() {
+  const maxH = window.innerHeight - 40;
+  const maxW = window.innerWidth;
+  const ratio = 9 / 16;
+  if (maxW / maxH < ratio) {
+    W = maxW;
+    H = maxW / ratio;
+  } else {
+    H = maxH;
+    W = maxH * ratio;
+  }
+  W = Math.floor(W);
+  H = Math.floor(H);
+  canvas.width = W;
+  canvas.height = H;
+}
+resize();
+window.addEventListener('resize', () => { resize(); });
+
+// =============================================
+// GAME STATE
+// =============================================
+const STATE = { START: 0, PLAYING: 1, PAUSED: 2, GAMEOVER: 3 };
+let state = STATE.START;
+let score = 0;
+let highScore = parseInt(localStorage.getItem('fsc_hi') || '0');
+let lives = 3;
+let frame = 0;
+let spawnTimer = 0;
+let spawnInterval = 120; // frames between spawns
+let gameTime = 0; // seconds
+let shakeFrames = 0;
+let lastTime = 0;
+let multiplier = 1;
+let multiplierTimer = 0;
+let slowmoTimer = 0;
+
+// =============================================
+// PIXEL FONT / DRAW UTILS
+// =============================================
+function pxText(text, x, y, size, color, align = 'left') {
+  ctx.font = `${size}px 'Press Start 2P', monospace`;
+  ctx.textAlign = align;
+  ctx.fillStyle = color;
+  ctx.fillText(text, x, y);
+}
+
+function drawRect(x, y, w, h, color) {
+  ctx.fillStyle = color;
+  ctx.fillRect(Math.round(x), Math.round(y), w, h);
+}
+
+// =============================================
+// PARTICLES
+// =============================================
+let particles = [];
+
+function spawnParticles(x, y, color, count = 8) {
+  for (let i = 0; i < count; i++) {
+    const angle = (Math.PI * 2 * i) / count + Math.random() * 0.5;
+    const speed = 2 + Math.random() * 3;
+    particles.push({
+      x, y,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed,
+      life: 1,
+      decay: 0.04 + Math.random() * 0.03,
+      size: 3 + Math.random() * 4,
+      color
+    });
+  }
+}
+
+function updateParticles() {
+  particles = particles.filter(p => p.life > 0);
+  for (const p of particles) {
+    p.x += p.vx;
+    p.y += p.vy;
+    p.vy += 0.15;
+    p.life -= p.decay;
+    ctx.globalAlpha = p.life;
+    ctx.fillStyle = p.color;
+    ctx.fillRect(Math.round(p.x - p.size / 2), Math.round(p.y - p.size / 2), p.size, p.size);
+  }
+  ctx.globalAlpha = 1;
+}
+
+// =============================================
+// FROG (PLAYER)
+// =============================================
+const frog = {
+  x: 0,
+  y: 0,
+  w: 0,
+  h: 0,
+  targetX: 0,
+  eatAnim: 0,     // tongue anim frames remaining
+  eatDir: 0,      // direction tongue went
+  init() {
+    this.w = Math.round(W * 0.13);
+    this.h = Math.round(this.w * 0.85);
+    this.y = H - this.h - Math.round(H * 0.04);
+    this.x = W / 2 - this.w / 2;
+    this.targetX = this.x;
+  },
+  update() {
+    // Smooth easing
+    this.x += (this.targetX - this.x) * 0.18;
+    // Clamp
+    this.x = Math.max(2, Math.min(W - this.w - 2, this.x));
+    if (this.eatAnim > 0) this.eatAnim--;
+  },
+  draw() {
+    const x = Math.round(this.x);
+    const y = Math.round(this.y);
+    const w = this.w;
+    const h = this.h;
+    const cx = x + w / 2;
+
+    // Body
+    drawRect(x + w * 0.1, y + h * 0.3, w * 0.8, h * 0.7, '#2d8c2d');
+    drawRect(x + w * 0.05, y + h * 0.4, w * 0.9, h * 0.5, '#3aaa3a');
+
+    // Head
+    drawRect(x + w * 0.15, y + h * 0.1, w * 0.7, h * 0.35, '#3aaa3a');
+
+    // Eyes
+    const eyeSize = Math.round(w * 0.15);
+    drawRect(x + w * 0.18, y, eyeSize, eyeSize, '#ffffff');
+    drawRect(x + w * 0.67, y, eyeSize, eyeSize, '#ffffff');
+    drawRect(x + w * 0.22, y + 2, eyeSize * 0.5, eyeSize * 0.5, '#111111');
+    drawRect(x + w * 0.71, y + 2, eyeSize * 0.5, eyeSize * 0.5, '#111111');
+
+    // Mouth
+    if (this.eatAnim > 0) {
+      // Open mouth
+      drawRect(x + w * 0.25, y + h * 0.38, w * 0.5, h * 0.12, '#ff4444');
+      drawRect(x + w * 0.25, y + h * 0.38, w * 0.5, h * 0.05, '#ffaaaa');
+      // Tongue
+      const tongueLen = this.eatAnim > 6 ? h * 0.4 : h * 0.2;
+      drawRect(cx - 3, y + h * 0.38, 6, -tongueLen, '#ff2222');
+      drawRect(cx - 7, y + h * 0.38 - tongueLen, 14, 7, '#ff4444');
+    } else {
+      // Smile
+      drawRect(x + w * 0.3, y + h * 0.42, w * 0.4, 3, '#1a6a1a');
+    }
+
+    // Legs
+    drawRect(x, y + h * 0.65, w * 0.15, h * 0.3, '#2d8c2d');
+    drawRect(x + w * 0.85, y + h * 0.65, w * 0.15, h * 0.3, '#2d8c2d');
+    drawRect(x - w * 0.05, y + h * 0.9, w * 0.25, h * 0.1, '#2d8c2d');
+    drawRect(x + w * 0.8, y + h * 0.9, w * 0.25, h * 0.1, '#2d8c2d');
+
+    // Spots
+    drawRect(x + w * 0.3, y + h * 0.55, w * 0.12, h * 0.1, '#1e6e1e');
+    drawRect(x + w * 0.58, y + h * 0.6, w * 0.1, h * 0.08, '#1e6e1e');
+  }
+};
+
+// =============================================
+// INSECTS
+// =============================================
+const INSECT_TYPES = {
+  FLY:     { label: 'FLY',     color: '#888888', glow: '#aaaaaa', pts: 10,  emoji: '🪰', chance: 0.55 },
+  GOLDEN:  { label: 'GOLDEN',  color: '#ffdd00', glow: '#ffff44', pts: 50,  emoji: '✨', chance: 0.20 },
+  FIREFLY: { label: 'FIREFLY', color: '#aaffaa', glow: '#00ff88', pts: 0,   emoji: '🌟', chance: 0.12 },
+  POISON:  { label: 'POISON',  color: '#cc00cc', glow: '#ff00ff', pts: -20, emoji: '☠️', chance: 0.13 },
+};
+
+let insects = [];
+
+function pickType() {
+  const r = Math.random();
+  let acc = 0;
+  for (const [key, t] of Object.entries(INSECT_TYPES)) {
+    acc += t.chance;
+    if (r < acc) return key;
+  }
+  return 'FLY';
+}
+
+function spawnInsect() {
+  const typeKey = pickType();
+  const type = INSECT_TYPES[typeKey];
+  const sz = Math.round(W * 0.06);
+  const baseSpeed = (H * 0.003) + (gameTime * 0.00015 * H);
+  const speed = baseSpeed * (0.8 + Math.random() * 0.6);
+  insects.push({
+    x: sz + Math.random() * (W - sz * 2),
+    y: -sz,
+    w: sz, h: sz,
+    speed,
+    typeKey,
+    type,
+    wobble: (Math.random() - 0.5) * 1.5,
+    wobblePhase: Math.random() * Math.PI * 2,
+    wobbleAmp: Math.random() * 30,
+    glowPulse: Math.random() * Math.PI * 2,
+    dead: false
+  });
+}
+
+function updateInsects(dt) {
+  const slowFactor = slowmoTimer > 0 ? 0.4 : 1;
+  insects = insects.filter(i => !i.dead);
+  for (const ins of insects) {
+    ins.y += ins.speed * slowFactor;
+    ins.wobblePhase += 0.06;
+    ins.x += Math.sin(ins.wobblePhase) * ins.wobble;
+    ins.x = Math.max(ins.w / 2, Math.min(W - ins.w / 2, ins.x));
+    ins.glowPulse += 0.1;
+
+    // Missed
+    if (ins.y > H + ins.h) {
+      ins.dead = true;
+      if (ins.typeKey !== 'POISON') {
+        loseLife();
+      }
+    }
+  }
+}
+
+function drawInsect(ins) {
+  const x = Math.round(ins.x - ins.w / 2);
+  const y = Math.round(ins.y - ins.h / 2);
+  const sz = ins.w;
+  const glow = Math.sin(ins.glowPulse) * 0.5 + 0.5;
+
+  // Glow
+  ctx.save();
+  ctx.shadowColor = ins.type.glow;
+  ctx.shadowBlur = 8 + glow * 10;
+
+  // Body pixel art
+  switch (ins.typeKey) {
+    case 'FLY': drawFly(x, y, sz, ins.type.color); break;
+    case 'GOLDEN': drawFly(x, y, sz, ins.type.color); break;
+    case 'FIREFLY': drawFirefly(x, y, sz, glow); break;
+    case 'POISON': drawPoison(x, y, sz); break;
+  }
+
+  ctx.restore();
+}
+
+function drawFly(x, y, sz, color) {
+  // Body
+  drawRect(x + sz * 0.3, y + sz * 0.3, sz * 0.4, sz * 0.5, color);
+  // Head
+  drawRect(x + sz * 0.35, y + sz * 0.18, sz * 0.3, sz * 0.2, '#666');
+  // Eyes
+  drawRect(x + sz * 0.33, y + sz * 0.16, sz * 0.1, sz * 0.1, '#ff2200');
+  drawRect(x + sz * 0.57, y + sz * 0.16, sz * 0.1, sz * 0.1, '#ff2200');
+  // Wings
+  ctx.globalAlpha = 0.6;
+  drawRect(x + sz * 0.08, y + sz * 0.2, sz * 0.28, sz * 0.35, '#ccddff');
+  drawRect(x + sz * 0.64, y + sz * 0.2, sz * 0.28, sz * 0.35, '#ccddff');
+  ctx.globalAlpha = 1;
+  // Legs
+  drawRect(x + sz * 0.25, y + sz * 0.6, sz * 0.08, sz * 0.2, '#555');
+  drawRect(x + sz * 0.65, y + sz * 0.6, sz * 0.08, sz * 0.2, '#555');
+}
+
+function drawFirefly(x, y, sz, glow) {
+  drawRect(x + sz * 0.3, y + sz * 0.35, sz * 0.4, sz * 0.4, '#88ff88');
+  // Glow butt
+  ctx.globalAlpha = 0.5 + glow * 0.5;
+  drawRect(x + sz * 0.35, y + sz * 0.6, sz * 0.3, sz * 0.2, '#ffff44');
+  ctx.globalAlpha = 1;
+  drawRect(x + sz * 0.35, y + sz * 0.22, sz * 0.3, sz * 0.18, '#55aa55');
+  // Wings
+  ctx.globalAlpha = 0.5;
+  drawRect(x + sz * 0.05, y + sz * 0.25, sz * 0.3, sz * 0.3, '#aaffcc');
+  drawRect(x + sz * 0.65, y + sz * 0.25, sz * 0.3, sz * 0.3, '#aaffcc');
+  ctx.globalAlpha = 1;
+}
+
+function drawPoison(x, y, sz) {
+  // Purple bug
+  drawRect(x + sz * 0.28, y + sz * 0.28, sz * 0.44, sz * 0.5, '#aa00cc');
+  drawRect(x + sz * 0.32, y + sz * 0.15, sz * 0.36, sz * 0.22, '#880099');
+  // Skull spot
+  drawRect(x + sz * 0.42, y + sz * 0.33, sz * 0.16, sz * 0.14, '#ffffff');
+  drawRect(x + sz * 0.42, y + sz * 0.42, sz * 0.06, sz * 0.1, '#ffffff');
+  drawRect(x + sz * 0.52, y + sz * 0.42, sz * 0.06, sz * 0.1, '#ffffff');
+  // Wings
+  ctx.globalAlpha = 0.55;
+  drawRect(x + sz * 0.05, y + sz * 0.18, sz * 0.26, sz * 0.38, '#dd88ff');
+  drawRect(x + sz * 0.69, y + sz * 0.18, sz * 0.26, sz * 0.38, '#dd88ff');
+  ctx.globalAlpha = 1;
+}
+
+// =============================================
+// COLLISION DETECTION
+// =============================================
+function checkCollisions() {
+  const fx = frog.x;
+  const fy = frog.y;
+  const fw = frog.w;
+  const fh = frog.h;
+
+  for (const ins of insects) {
+    if (ins.dead) continue;
+    const ix = ins.x - ins.w * 0.4;
+    const iy = ins.y - ins.h * 0.4;
+    const iw = ins.w * 0.8;
+    const ih = ins.h * 0.8;
+
+    if (fx < ix + iw && fx + fw > ix && fy < iy + ih && fy + fh > iy) {
+      ins.dead = true;
+      frog.eatAnim = 14;
+
+      if (ins.typeKey === 'POISON') {
+        spawnParticles(ins.x, ins.y, '#ff00ff', 12);
+        loseLife();
+        shakeFrames = 20;
+      } else if (ins.typeKey === 'FIREFLY') {
+        spawnParticles(ins.x, ins.y, '#aaffaa', 14);
+        // Powerup: alternates between slow-mo and multiplier
+        if (Math.random() < 0.5) {
+          slowmoTimer = 300;
+        } else {
+          multiplier = 3;
+          multiplierTimer = 300;
+        }
+        playSound('powerup');
+      } else {
+        const pts = ins.type.pts * multiplier;
+        score += pts;
+        spawnParticles(ins.x, ins.y, ins.type.glow, ins.typeKey === 'GOLDEN' ? 16 : 8);
+        playSound('catch');
+        showFloatText(ins.x, ins.y, `+${pts}`, ins.type.glow);
+      }
+    }
+  }
+}
+
+// =============================================
+// FLOAT TEXT
+// =============================================
+let floatTexts = [];
+function showFloatText(x, y, text, color) {
+  floatTexts.push({ x, y, text, color, life: 1, vy: -1.5 });
+}
+function updateFloatTexts() {
+  floatTexts = floatTexts.filter(t => t.life > 0);
+  for (const t of floatTexts) {
+    t.y += t.vy;
+    t.life -= 0.025;
+    ctx.globalAlpha = t.life;
+    ctx.font = `${Math.round(W * 0.03)}px 'Press Start 2P', monospace`;
+    ctx.textAlign = 'center';
+    ctx.fillStyle = t.color;
+    ctx.fillText(t.text, t.x, t.y);
+    ctx.globalAlpha = 1;
+  }
+  ctx.textAlign = 'left';
+}
+
+// =============================================
+// LIVES
+// =============================================
+function loseLife() {
+  lives--;
+  shakeFrames = 18;
+  playSound('miss');
+  if (lives <= 0) {
+    endGame();
+  }
+}
+
+// =============================================
+// BACKGROUND (swamp night)
+// =============================================
+const stars = [];
+for (let i = 0; i < 60; i++) {
+  stars.push({ x: Math.random(), y: Math.random() * 0.7, r: Math.random() > 0.8 ? 2 : 1 });
+}
+const reeds = [];
+for (let i = 0; i < 10; i++) {
+  reeds.push({ x: Math.random(), h: 0.12 + Math.random() * 0.12 });
+}
+
+function drawBackground() {
+  // Sky gradient
+  const grad = ctx.createLinearGradient(0, 0, 0, H * 0.75);
+  grad.addColorStop(0, '#010a0a');
+  grad.addColorStop(1, '#02200e');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, W, H);
+
+  // Stars
+  ctx.fillStyle = '#ffffff';
+  for (const s of stars) {
+    const flicker = Math.sin(frame * 0.05 + s.x * 100) * 0.3 + 0.7;
+    ctx.globalAlpha = flicker;
+    ctx.fillRect(Math.round(s.x * W), Math.round(s.y * H), s.r, s.r);
+  }
+  ctx.globalAlpha = 1;
+
+  // Moon
+  ctx.fillStyle = '#ffffcc';
+  ctx.beginPath();
+  ctx.arc(W * 0.82, H * 0.1, W * 0.045, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#010a0a';
+  ctx.beginPath();
+  ctx.arc(W * 0.845, H * 0.09, W * 0.04, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Water (ground)
+  const waterGrad = ctx.createLinearGradient(0, H * 0.75, 0, H);
+  waterGrad.addColorStop(0, '#052218');
+  waterGrad.addColorStop(1, '#021208');
+  ctx.fillStyle = waterGrad;
+  ctx.fillRect(0, H * 0.75, W, H * 0.25);
+
+  // Water shimmer
+  ctx.globalAlpha = 0.15;
+  for (let i = 0; i < 5; i++) {
+    const shimX = ((frame * 0.5 + i * 60) % W);
+    ctx.fillStyle = '#66ffaa';
+    ctx.fillRect(shimX, H * 0.78 + i * 4, W * 0.15, 1);
+  }
+  ctx.globalAlpha = 1;
+
+  // Lily pads
+  for (let i = 0; i < 4; i++) {
+    const lx = (W * 0.1) + i * (W * 0.27);
+    const ly = H * 0.82;
+    ctx.fillStyle = '#1a5c1a';
+    ctx.beginPath();
+    ctx.ellipse(lx, ly, W * 0.07, H * 0.025, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#2a7a2a';
+    ctx.beginPath();
+    ctx.ellipse(lx, ly, W * 0.04, H * 0.015, 0.3, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  // Reeds
+  ctx.strokeStyle = '#2a5c2a';
+  ctx.lineWidth = 2;
+  for (const r of reeds) {
+    const rx = r.x * W;
+    const rh = r.h * H;
+    const sway = Math.sin(frame * 0.02 + r.x * 10) * 3;
+    ctx.beginPath();
+    ctx.moveTo(rx, H);
+    ctx.lineTo(rx + sway, H - rh);
+    ctx.stroke();
+    ctx.fillStyle = '#3a6c2a';
+    ctx.beginPath();
+    ctx.ellipse(rx + sway, H - rh, 3, 8, 0.3, 0, Math.PI * 2);
+    ctx.fill();
+  }
+}
+
+// =============================================
+// HUD
+// =============================================
+function drawHUD() {
+  const fs = Math.round(W * 0.028);
+  const pad = Math.round(W * 0.03);
+  const top = Math.round(H * 0.03);
+
+  // Score
+  ctx.font = `${fs}px 'Press Start 2P', monospace`;
+  ctx.textAlign = 'left';
+  ctx.fillStyle = '#00ff88';
+  ctx.shadowColor = '#00ff44';
+  ctx.shadowBlur = 6;
+  ctx.fillText(`${score}`, pad, top + fs);
+  ctx.shadowBlur = 0;
+
+  // High score
+  ctx.font = `${Math.round(fs * 0.65)}px 'Press Start 2P', monospace`;
+  ctx.fillStyle = '#ffcc00';
+  ctx.fillText(`HI:${Math.max(score, highScore)}`, pad, top + fs * 2.1);
+
+  // Lives (frog icons)
+  ctx.textAlign = 'right';
+  ctx.font = `${Math.round(W * 0.05)}px monospace`;
+  for (let i = 0; i < 3; i++) {
+    ctx.globalAlpha = i < lives ? 1 : 0.2;
+    ctx.fillText('🐸', W - pad - (3 - 1 - i) * Math.round(W * 0.08), top + fs);
+  }
+  ctx.globalAlpha = 1;
+  ctx.textAlign = 'left';
+
+  // Pause hint
+  ctx.font = `${Math.round(fs * 0.55)}px 'Press Start 2P', monospace`;
+  ctx.fillStyle = '#336633';
+  ctx.textAlign = 'center';
+  ctx.fillText('P = PAUSE', W / 2, top + Math.round(fs * 0.7));
+  ctx.textAlign = 'left';
+
+  // Multiplier badge
+  if (multiplierTimer > 0) {
+    ctx.font = `${Math.round(fs * 0.75)}px 'Press Start 2P', monospace`;
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#ffff00';
+    ctx.shadowColor = '#ffff00';
+    ctx.shadowBlur = 8;
+    ctx.fillText(`x${multiplier} COMBO!`, W / 2, H * 0.08);
+    ctx.shadowBlur = 0;
+    ctx.textAlign = 'left';
+  }
+
+  // Slow-mo badge
+  if (slowmoTimer > 0) {
+    ctx.font = `${Math.round(fs * 0.75)}px 'Press Start 2P', monospace`;
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#aaffff';
+    ctx.shadowColor = '#00ffff';
+    ctx.shadowBlur = 8;
+    ctx.fillText('SLOW MO!', W / 2, H * 0.14);
+    ctx.shadowBlur = 0;
+    ctx.textAlign = 'left';
+  }
+
+  // Paused overlay
+  if (state === STATE.PAUSED) {
+    ctx.fillStyle = 'rgba(0,0,0,0.6)';
+    ctx.fillRect(0, 0, W, H);
+    ctx.font = `${Math.round(W * 0.06)}px 'Press Start 2P', monospace`;
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#ffff00';
+    ctx.fillText('PAUSED', W / 2, H / 2);
+    ctx.font = `${Math.round(W * 0.03)}px 'Press Start 2P', monospace`;
+    ctx.fillStyle = '#aaffaa';
+    ctx.fillText('P TO RESUME', W / 2, H / 2 + Math.round(W * 0.08));
+    ctx.textAlign = 'left';
+  }
+}
+
+// =============================================
+// SOUND (Web Audio API)
+// =============================================
+let audioCtx = null;
+function ensureAudio() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+}
+
+function playSound(type) {
+  try {
+    ensureAudio();
+    const o = audioCtx.createOscillator();
+    const g = audioCtx.createGain();
+    o.connect(g);
+    g.connect(audioCtx.destination);
+    const now = audioCtx.currentTime;
+
+    switch (type) {
+      case 'catch':
+        o.type = 'square';
+        o.frequency.setValueAtTime(440, now);
+        o.frequency.linearRampToValueAtTime(880, now + 0.05);
+        g.gain.setValueAtTime(0.15, now);
+        g.gain.linearRampToValueAtTime(0, now + 0.1);
+        o.start(now); o.stop(now + 0.1);
+        break;
+      case 'miss':
+        o.type = 'sawtooth';
+        o.frequency.setValueAtTime(200, now);
+        o.frequency.linearRampToValueAtTime(80, now + 0.2);
+        g.gain.setValueAtTime(0.2, now);
+        g.gain.linearRampToValueAtTime(0, now + 0.2);
+        o.start(now); o.stop(now + 0.2);
+        break;
+      case 'powerup':
+        o.type = 'square';
+        o.frequency.setValueAtTime(330, now);
+        o.frequency.setValueAtTime(440, now + 0.05);
+        o.frequency.setValueAtTime(660, now + 0.1);
+        g.gain.setValueAtTime(0.15, now);
+        g.gain.linearRampToValueAtTime(0, now + 0.18);
+        o.start(now); o.stop(now + 0.18);
+        break;
+      case 'gameover':
+        o.type = 'square';
+        o.frequency.setValueAtTime(300, now);
+        o.frequency.linearRampToValueAtTime(100, now + 0.5);
+        g.gain.setValueAtTime(0.2, now);
+        g.gain.linearRampToValueAtTime(0, now + 0.5);
+        o.start(now); o.stop(now + 0.5);
+        break;
+    }
+  } catch (e) {}
+}
+
+// Background beep
+let bgBeat = 0;
+function playBgBeat() {
+  if (state !== STATE.PLAYING) return;
+  bgBeat++;
+  if (bgBeat % 90 !== 0) return;
+  try {
+    ensureAudio();
+    const o = audioCtx.createOscillator();
+    const g = audioCtx.createGain();
+    o.connect(g);
+    g.connect(audioCtx.destination);
+    o.type = 'square';
+    const now = audioCtx.currentTime;
+    o.frequency.setValueAtTime(110, now);
+    g.gain.setValueAtTime(0.04, now);
+    g.gain.linearRampToValueAtTime(0, now + 0.15);
+    o.start(now);
+    o.stop(now + 0.15);
+  } catch (e) {}
+}
+
+// =============================================
+// INPUT HANDLING
+// =============================================
+let mouseDown = false;
+let lastMouseX = 0;
+let touchStartX = 0;
+let dragStartX = 0;
+let frogStartX = 0;
+
+canvas.addEventListener('mousedown', e => {
+  mouseDown = true;
+  lastMouseX = e.clientX;
+  dragStartX = e.clientX;
+  frogStartX = frog.x;
+  if (state === STATE.START || state === STATE.GAMEOVER) startGame();
+  ensureAudio();
+}, { passive: false });
+
+canvas.addEventListener('mousemove', e => {
+  if (!mouseDown || state !== STATE.PLAYING) return;
+  const rect = canvas.getBoundingClientRect();
+  const scaleX = W / rect.width;
+  const delta = (e.clientX - dragStartX) * scaleX;
+  frog.targetX = frogStartX + delta;
+});
+
+window.addEventListener('mouseup', () => { mouseDown = false; });
+
+canvas.addEventListener('touchstart', e => {
+  e.preventDefault();
+  const t = e.touches[0];
+  touchStartX = t.clientX;
+  dragStartX = t.clientX;
+  frogStartX = frog.x;
+  if (state === STATE.START || state === STATE.GAMEOVER) startGame();
+  ensureAudio();
+}, { passive: false });
+
+canvas.addEventListener('touchmove', e => {
+  e.preventDefault();
+  if (state !== STATE.PLAYING) return;
+  const t = e.touches[0];
+  const rect = canvas.getBoundingClientRect();
+  const scaleX = W / rect.width;
+  const delta = (t.clientX - dragStartX) * scaleX;
+  frog.targetX = frogStartX + delta;
+}, { passive: false });
+
+canvas.addEventListener('touchend', e => { e.preventDefault(); }, { passive: false });
+
+// Overlay tap/click → start game (overlay covers canvas so canvas events never fire)
+overlay.addEventListener('click', e => {
+  if (state === STATE.START || state === STATE.GAMEOVER) startGame();
+  ensureAudio();
+});
+overlay.addEventListener('touchstart', e => {
+  e.stopPropagation();
+  if (state === STATE.START || state === STATE.GAMEOVER) startGame();
+  ensureAudio();
+}, { passive: true });
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter') {
+    if (state === STATE.START || state === STATE.GAMEOVER) startGame();
+  }
+  if (e.key === 'p' || e.key === 'P') {
+    if (state === STATE.PLAYING) state = STATE.PAUSED;
+    else if (state === STATE.PAUSED) state = STATE.PLAYING;
+  }
+  // Mouse-only keyboard fallback (arrow keys move frog)
+  if (state === STATE.PLAYING) {
+    if (e.key === 'ArrowLeft') frog.targetX -= W * 0.05;
+    if (e.key === 'ArrowRight') frog.targetX += W * 0.05;
+  }
+});
+
+document.addEventListener('contextmenu', e => e.preventDefault());
+document.addEventListener('touchmove', e => e.preventDefault(), { passive: false });
+
+// =============================================
+// GAME FLOW
+// =============================================
+function startGame() {
+  score = 0;
+  lives = 3;
+  frame = 0;
+  gameTime = 0;
+  spawnTimer = 0;
+  spawnInterval = 120;
+  insects = [];
+  particles = [];
+  floatTexts = [];
+  multiplier = 1;
+  multiplierTimer = 0;
+  slowmoTimer = 0;
+  shakeFrames = 0;
+  resize();
+  frog.init();
+  frog.x = W / 2 - frog.w / 2;
+  frog.targetX = frog.x;
+  state = STATE.PLAYING;
+  overlay.classList.add('hidden');
+}
+
+function endGame() {
+  state = STATE.GAMEOVER;
+  playSound('gameover');
+  if (score > highScore) {
+    highScore = score;
+    localStorage.setItem('fsc_hi', highScore);
+  }
+  overlay.classList.remove('hidden');
+  overlay.innerHTML = `
+    <div class="frog-art">😵</div>
+    <div class="overlay-title">GAME OVER</div>
+    <div class="overlay-score">SCORE: ${score}</div>
+    <div class="overlay-score" style="color:#aaffaa; font-size: clamp(7px,1.5vw,10px); margin-bottom:16px;">BEST: ${highScore}</div>
+    <div class="press-enter">ENTER or TAP TO RETRY</div>
+  `;
+}
+
+// =============================================
+// DIFFICULTY SCALING
+// =============================================
+function updateDifficulty() {
+  // Increase spawn rate every 15 seconds
+  spawnInterval = Math.max(35, 120 - Math.floor(gameTime / 15) * 12);
+}
+
+// =============================================
+// MAIN LOOP
+// =============================================
+function loop(timestamp) {
+  requestAnimationFrame(loop);
+
+  const dt = Math.min((timestamp - lastTime) / 1000, 0.05);
+  lastTime = timestamp;
+
+  if (state === STATE.PLAYING) {
+    frame++;
+    gameTime += dt;
+
+    // Screen shake
+    let sx = 0, sy = 0;
+    if (shakeFrames > 0) {
+      sx = (Math.random() - 0.5) * 10 * (shakeFrames / 18);
+      sy = (Math.random() - 0.5) * 6 * (shakeFrames / 18);
+      shakeFrames--;
+    }
+
+    ctx.save();
+    ctx.translate(sx, sy);
+
+    // Update
+    frog.update();
+    updateInsects(dt);
+    checkCollisions();
+    updateDifficulty();
+    playBgBeat();
+
+    // Timers
+    if (multiplierTimer > 0) { multiplierTimer--; if (multiplierTimer <= 0) multiplier = 1; }
+    if (slowmoTimer > 0) slowmoTimer--;
+
+    // Spawn
+    spawnTimer++;
+    if (spawnTimer >= spawnInterval) {
+      spawnTimer = 0;
+      spawnInsect();
+      // Bonus double spawn at high time
+      if (gameTime > 45 && Math.random() < 0.4) spawnInsect();
+    }
+
+    // Draw
+    drawBackground();
+    for (const ins of insects) drawInsect(ins);
+    frog.draw();
+    updateParticles();
+    updateFloatTexts();
+    drawHUD();
+
+    ctx.restore();
+  } else if (state === STATE.PAUSED) {
+    drawBackground();
+    for (const ins of insects) drawInsect(ins);
+    frog.draw();
+    drawHUD();
+  } else {
+    // Start / Game over: just draw bg animation
+    frame++;
+    drawBackground();
+  }
+}
+
+// =============================================
+// INIT
+// =============================================
+frog.init();
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>

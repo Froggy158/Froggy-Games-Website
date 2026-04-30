@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Frog Grab</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body oncontextmenu="return false;">
+
+<!-- ======================================================
+     HTML STRUCTURE
+====================================================== -->
+
+<!-- Background canvas -->
+<canvas id="bgCanvas"></canvas>
+<!-- Game canvas -->
+<canvas id="gameCanvas" style="position:absolute;top:0;left:0;"></canvas>
+<!-- Effects canvas (particles, floaters) -->
+<canvas id="fxCanvas"   style="position:absolute;top:0;left:0;pointer-events:none;"></canvas>
+
+<!-- HUD -->
+<div id="hud">
+  <div class="stats-box">
+    <div id="score-display">Score: 0</div>
+    <div id="high-score-display">Best: 0</div>
+  </div>
+  <div id="level-badge">Level 1</div>
+  <div id="right-hud">
+    <div style="display:flex;gap:8px;align-items:center;pointer-events:auto;">
+      <button id="btn-pause">⏸</button>
+    </div>
+    <div id="combo-wrap">
+      <div id="combo-label">Combo</div>
+      <div id="combo-val">x1</div>
+      <div id="combo-bar-bg"><div id="combo-bar"></div></div>
+    </div>
+    <div id="powerup-hud">⚡ <span id="powerup-name">SLOW MO</span> <span id="powerup-timer"></span></div>
+  </div>
+</div>
+
+<!-- Achievement toast -->
+<div class="achievement-toast" id="achievement-toast">🏆 Achievement!</div>
+
+<!-- Start Screen -->
+<div class="screen visible" id="start-screen">
+  <h1 class="game-logo">🐸 FROG GRAB</h1>
+  <div class="game-subtitle">Swamp Edition</div>
+  <div class="start-instructions">
+    Tap anywhere to shoot your tongue.<br>
+    Catch flies to build your <span>combo</span>.<br>
+    Missing costs you a point!
+  </div>
+  <div class="start-stats">
+    <div class="stat-pill"><div class="sp-val" id="ss-best">0</div><div class="sp-lbl">Best</div></div>
+    <div class="stat-pill"><div class="sp-val" id="ss-caught">0</div><div class="sp-lbl">Caught</div></div>
+    <div class="stat-pill"><div class="sp-val" id="ss-combo">x1</div><div class="sp-lbl">Longest Combo</div></div>
+  </div>
+  <button class="btn-primary" id="btn-start">🎮 PLAY</button>
+</div>
+
+<!-- Countdown Screen -->
+<div class="screen" id="countdown-screen">
+  <div id="countdown-num">3</div>
+</div>
+
+<!-- Pause Screen -->
+<div class="screen" id="pause-screen">
+  <div class="pause-title">⏸ PAUSED</div>
+  <button class="btn-primary" id="btn-resume">▶ RESUME</button>
+  <button class="btn-secondary" id="btn-quit-pause">Quit to Menu</button>
+</div>
+
+<!-- Game Over Screen -->
+<div class="screen" id="gameover-screen">
+  <div class="go-title">GAME OVER</div>
+  <div class="go-score" id="go-score">0</div>
+  <div class="go-best" id="go-best">Best: 0</div>
+  <div class="go-stats">
+    <div class="go-stat"><div class="gs-val" id="go-caught">0</div><div class="gs-lbl">Flies Caught</div></div>
+    <div class="go-stat"><div class="gs-val" id="go-combo">x1</div><div class="gs-lbl">Best Combo</div></div>
+    <div class="go-stat"><div class="gs-val" id="go-level">1</div><div class="gs-lbl">Level Reached</div></div>
+  </div>
+  <button class="btn-primary" id="btn-restart">🔄 PLAY AGAIN</button>
+  <button class="btn-secondary" id="btn-menu">Main Menu</button>
+</div>
+
+<!-- Sound Toggle -->
+<button id="sound-toggle">🔊</button>
+
+<!-- Home Button — exactly as original -->
+<button class="btn-home" onclick="window.location.href='../index.html'">🏠 Home</button>
+
+<script src="script.js"></script>
+
+</body>
+</html>

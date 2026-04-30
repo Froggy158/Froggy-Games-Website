@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Frog Merge Defense</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="gameWrapper">
+  <!-- TOP BAR -->
+  <div id="topBar">
+    <button class="btn-home" onclick="window.location.href='../index.html'">🏠 Home</button>
+    <div class="stat-block">
+      <div class="stat">❤️ <span id="hpVal">100</span></div>
+      <div class="stat">🪙 <span id="coinVal">50</span></div>
+    </div>
+    <div id="waveInfo">WAVE <span id="waveNum">0</span></div>
+  </div>
+
+  <!-- CANVAS -->
+  <div id="canvasWrapper">
+    <canvas id="gameCanvas"></canvas>
+    <div id="waveAnnounce"></div>
+    <div id="tooltip"></div>
+  </div>
+
+  <!-- BOTTOM HUD -->
+  <div id="bottomHud">
+    <button class="shop-btn" id="buyBtn" onclick="buyFrog()">🐸 BUY<br><small>Cost: <span id="frogCost">15</span>🪙</small></button>
+    <div class="coin-display">🪙 <span id="coinVal2">50</span></div>
+    <div id="mergeHint">Drag same-level frogs<br>together to MERGE!</div>
+    <button class="shop-btn" id="sellBtn" onclick="toggleSell()">💰 SELL<br><small>Select to sell</small></button>
+  </div>
+
+  <!-- START SCREEN -->
+  <div class="overlay" id="startScreen">
+    <h1>🐸 FROG MERGE</h1>
+    <h1 style="font-size:18px;animation:none;color:#aaffaa;text-shadow:0 0 8px #aaffaa">DEFENSE</h1>
+    <p>Place frogs on the grid to defend your castle.<br>Merge identical frogs to power up!<br>Survive as many waves as you can.</p>
+    <p style="color:#ffd700;font-size:11px">• Tap grid to place frogs (costs 🪙)<br>• Drag same frogs onto each other to merge<br>• Stronger frogs = more damage & faster attacks</p>
+    <button class="overlay-btn" onclick="startGame()">▶ START GAME</button>
+  </div>
+
+  <!-- GAME OVER SCREEN -->
+  <div class="overlay" id="gameOverScreen" style="display:none">
+    <h2>💀 CASTLE DESTROYED</h2>
+    <div class="score-box" id="finalScore"></div>
+    <p>Your frogs fought bravely<br>but the insects overwhelmed the castle.</p>
+    <button class="overlay-btn" onclick="restartGame()">↺ PLAY AGAIN</button>
+  </div>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>

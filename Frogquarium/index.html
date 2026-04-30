@@ -1,0 +1,951 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
+<title>Frogquarium 🐸</title>
+<style>
+  /* ===== RESET & BASE ===== */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    width: 100%; height: 100%; overflow: hidden;
+    font-family: 'Segoe UI', sans-serif;
+    background: #0d1f12;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+  img { -webkit-user-drag: none; user-drag: none; pointer-events: none; }
+
+  /* ===== SCREENS ===== */
+  .screen { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: opacity 0.5s ease, transform 0.5s ease; }
+  .screen.hidden { opacity: 0; pointer-events: none; transform: scale(0.97); }
+
+  /* ===== HEADER BAR ===== */
+  .top-bar {
+    position: absolute; top: 0; left: 0; right: 0;
+    height: 52px; display: flex; align-items: center; justify-content: space-between;
+    padding: 0 16px; z-index: 100;
+    background: rgba(13,31,18,0.7); backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(100,200,100,0.12);
+  }
+  .top-bar .logo { font-size: 1.2rem; font-weight: 700; color: #7eff8a; letter-spacing: 1px; }
+  .top-bar .logo span { color: #c8f7cc; font-weight: 300; }
+
+  /* ===== BUTTONS ===== */
+  button { border: none; outline: none; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+  .btn-home {
+    background: rgba(255,255,255,0.08); color: #c8f7cc;
+    border: 1px solid rgba(200,247,204,0.2); border-radius: 20px;
+    padding: 7px 14px; font-size: 0.82rem; font-weight: 600;
+    transition: background 0.2s;
+  }
+  .btn-primary {
+    background: linear-gradient(135deg, #3ecf5e, #1fa84b);
+    color: #fff; border-radius: 28px; font-size: 1rem; font-weight: 700;
+    padding: 14px 32px; box-shadow: 0 4px 20px rgba(62,207,94,0.35);
+    transition: transform 0.15s, box-shadow 0.15s;
+  }
+  .btn-primary:active { transform: scale(0.96); box-shadow: 0 2px 10px rgba(62,207,94,0.2); }
+  .btn-secondary {
+    background: rgba(255,255,255,0.07); color: #c8f7cc;
+    border: 1.5px solid rgba(200,247,204,0.2); border-radius: 22px;
+    font-size: 0.88rem; font-weight: 600; padding: 10px 22px;
+    transition: background 0.15s;
+  }
+  .btn-secondary:active { background: rgba(255,255,255,0.13); }
+  .btn-icon {
+    background: rgba(255,255,255,0.08); color: #c8f7cc;
+    border: 1px solid rgba(200,247,204,0.15); border-radius: 50%;
+    width: 36px; height: 36px; font-size: 1rem; display: flex; align-items: center; justify-content: center;
+  }
+  .btn-icon:active { background: rgba(255,255,255,0.2); }
+  .btn-icon.active { background: rgba(62,207,94,0.3); border-color: #3ecf5e; }
+
+  /* ===== WELCOME SCREEN ===== */
+  #screen-welcome { background: radial-gradient(ellipse at 50% 80%, #1a3a22 0%, #0d1f12 70%); }
+  .welcome-title {
+    font-size: clamp(2.5rem, 8vw, 5rem); font-weight: 800;
+    color: #7eff8a; text-shadow: 0 0 40px rgba(126,255,138,0.4);
+    letter-spacing: -1px; margin-bottom: 8px; text-align: center;
+  }
+  .welcome-sub { color: #6dbf80; font-size: 1rem; margin-bottom: 40px; text-align: center; }
+  .welcome-frogs { font-size: 4rem; margin-bottom: 20px; animation: float 3s ease-in-out infinite; }
+  @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-12px)} }
+
+  /* ===== DRAW SCREEN ===== */
+  #screen-draw { background: #0d1f12; }
+  .draw-container {
+    display: flex; flex-direction: column; align-items: center; gap: 12px;
+    width: 100%; max-width: 520px; padding: 0 12px;
+    padding-top: 60px;
+  }
+  .draw-title { color: #7eff8a; font-size: 1.1rem; font-weight: 700; text-align: center; }
+  .draw-hint { color: #5a8a65; font-size: 0.8rem; text-align: center; margin-top: -8px; }
+
+  #draw-canvas {
+    border-radius: 20px; background: #fff;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.5), 0 0 0 1px rgba(100,200,100,0.15);
+    touch-action: none; cursor: crosshair;
+    max-width: 100%;
+  }
+
+  .draw-toolbar {
+    display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: center;
+    background: rgba(255,255,255,0.05); border-radius: 20px; padding: 10px 14px;
+    border: 1px solid rgba(255,255,255,0.07); width: 100%;
+  }
+  .tool-sep { width: 1px; height: 28px; background: rgba(255,255,255,0.1); margin: 0 4px; }
+  .color-swatch {
+    width: 28px; height: 28px; border-radius: 50%; border: 2px solid transparent; cursor: pointer;
+    transition: transform 0.15s; flex-shrink: 0;
+  }
+  .color-swatch.active { border-color: #fff; transform: scale(1.2); }
+  .color-swatch:active { transform: scale(0.9); }
+  #color-picker { width: 28px; height: 28px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.3); cursor: pointer; padding: 0; overflow: hidden; background: none; }
+  .size-slider { width: 70px; accent-color: #3ecf5e; }
+  .draw-actions { display: flex; gap: 10px; width: 100%; justify-content: center; flex-wrap: wrap; }
+
+  /* ===== POND SCREEN ===== */
+  #screen-pond { background: #0a1a10; }
+  #pond-canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .pond-ui {
+    position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
+    display: flex; gap: 12px; z-index: 50;
+  }
+  .frog-count {
+    position: absolute; top: 58px; right: 14px;
+    background: rgba(13,31,18,0.75); backdrop-filter: blur(8px);
+    border: 1px solid rgba(100,200,100,0.15); border-radius: 16px;
+    padding: 6px 14px; color: #6dbf80; font-size: 0.8rem; font-weight: 600;
+    z-index: 50;
+  }
+
+  /* ===== STATS POPUP ===== */
+  #frog-stats {
+    position: absolute; background: rgba(13,31,18,0.92); backdrop-filter: blur(16px);
+    border: 1px solid rgba(100,200,100,0.25); border-radius: 20px;
+    padding: 16px 20px; min-width: 160px; z-index: 200;
+    pointer-events: none; transition: opacity 0.3s;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+  }
+  #frog-stats.hidden { opacity: 0; }
+  #frog-stats h3 { color: #7eff8a; font-size: 0.9rem; margin-bottom: 8px; }
+  #frog-stats .stat { color: #c8f7cc; font-size: 0.78rem; margin: 3px 0; }
+  #frog-stats .stat span { color: #6dbf80; }
+
+  /* ===== PARTICLES ===== */
+  .particle {
+    position: absolute; pointer-events: none; font-size: 1rem;
+    animation: particle-fly 0.8s ease-out forwards;
+  }
+  @keyframes particle-fly { 0%{opacity:1;transform:translateY(0) scale(1)} 100%{opacity:0;transform:translateY(-40px) scale(0.5)} }
+
+  /* ===== RIPPLE ===== */
+  .ripple {
+    position: absolute; border-radius: 50%;
+    border: 2px solid rgba(150,220,180,0.5);
+    pointer-events: none; animation: ripple-expand 1s ease-out forwards;
+  }
+  @keyframes ripple-expand { 0%{width:10px;height:10px;opacity:0.8;transform:translate(-50%,-50%)} 100%{width:60px;height:60px;opacity:0;transform:translate(-50%,-50%)} }
+</style>
+</head>
+<body>
+
+<!-- ===== WELCOME SCREEN ===== -->
+<div id="screen-welcome" class="screen">
+  <div class="top-bar">
+    <div class="logo">Frog<span>quarium</span></div>
+    <button class="btn-home" onclick="window.location.href='../index.html'">🏠 Home</button>
+  </div>
+  <div class="welcome-frogs">🐸</div>
+  <div class="welcome-title">Frogquarium</div>
+  <div class="welcome-sub">Draw a frog. Watch it live.</div>
+  <button class="btn-primary" id="btn-start-draw">✏️ Draw Your Frog</button>
+</div>
+
+<!-- ===== DRAW SCREEN ===== -->
+<div id="screen-draw" class="screen hidden">
+  <div class="top-bar">
+    <div class="logo">Frog<span>quarium</span></div>
+    <button class="btn-home" onclick="window.location.href='../index.html'">🏠 Home</button>
+  </div>
+  <div class="draw-container">
+    <div class="draw-title">🎨 Draw your frog!</div>
+    <div class="draw-hint">Use pen, shapes or fill — be creative!</div>
+    <canvas id="draw-canvas" width="360" height="320"></canvas>
+
+    <div class="draw-toolbar">
+      <!-- Tools -->
+      <button class="btn-icon active" id="tool-pen" title="Pen">✏️</button>
+      <button class="btn-icon" id="tool-fill" title="Fill">🪣</button>
+      <button class="btn-icon" id="tool-eraser" title="Eraser">⬜</button>
+      <div class="tool-sep"></div>
+      <!-- Colors -->
+      <div class="color-swatch active" style="background:#3ecf5e" data-color="#3ecf5e"></div>
+      <div class="color-swatch" style="background:#1a8c35" data-color="#1a8c35"></div>
+      <div class="color-swatch" style="background:#ffd93d" data-color="#ffd93d"></div>
+      <div class="color-swatch" style="background:#ff6b6b" data-color="#ff6b6b"></div>
+      <div class="color-swatch" style="background:#845ec2" data-color="#845ec2"></div>
+      <div class="color-swatch" style="background:#111111" data-color="#111111"></div>
+      <div class="color-swatch" style="background:#ffffff" data-color="#ffffff"></div>
+      <input type="color" id="color-picker" value="#3ecf5e" title="Custom color">
+      <div class="tool-sep"></div>
+      <!-- Size -->
+      <input type="range" class="size-slider" id="brush-size" min="2" max="30" value="8">
+    </div>
+
+    <div class="draw-actions">
+      <button class="btn-icon" id="btn-undo" title="Undo">↩️</button>
+      <button class="btn-icon" id="btn-redo" title="Redo">↪️</button>
+      <button class="btn-secondary" id="btn-clear-draw">🗑️ Clear</button>
+      <button class="btn-primary" id="btn-bring-to-life">🐸 Bring to Life!</button>
+    </div>
+
+    <div class="draw-actions" style="margin-top:-4px">
+      <button class="btn-secondary" id="btn-to-pond">🌿 Go to Pond</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== POND SCREEN ===== -->
+<div id="screen-pond" class="screen hidden">
+  <div class="top-bar">
+    <div class="logo">Frog<span>quarium</span></div>
+    <button class="btn-home" onclick="window.location.href='../index.html'">🏠 Home</button>
+  </div>
+  <canvas id="pond-canvas"></canvas>
+  <div class="frog-count" id="frog-count">🐸 0 frogs</div>
+  <div class="pond-ui">
+    <button class="btn-secondary" id="btn-draw-another">✏️ Draw Frog</button>
+    <button class="btn-secondary" id="btn-clear-pond">🗑️ Clear Pond</button>
+  </div>
+  <div id="frog-stats" class="hidden">
+    <h3 id="stat-name">Frog</h3>
+    <div class="stat">🏃 Speed: <span id="stat-speed"></span></div>
+    <div class="stat">⬆️ Jump: <span id="stat-jump"></span></div>
+    <div class="stat">🧠 Mood: <span id="stat-behavior"></span></div>
+    <div class="stat">🍽️ Flies eaten: <span id="stat-flies"></span></div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+//  FROGQUARIUM — Main Script
+// ============================================================
+
+// ---- Screen management ----
+const screens = {
+  welcome: document.getElementById('screen-welcome'),
+  draw:    document.getElementById('screen-draw'),
+  pond:    document.getElementById('screen-pond'),
+};
+function showScreen(name) {
+  Object.entries(screens).forEach(([k, el]) => {
+    el.classList.toggle('hidden', k !== name);
+  });
+}
+
+// ---- Prevent context menu & scroll ----
+document.addEventListener('contextmenu', e => e.preventDefault());
+document.addEventListener('touchmove', e => e.preventDefault(), { passive: false });
+
+// ============================================================
+//  DRAWING SYSTEM
+// ============================================================
+const drawCanvas = document.getElementById('draw-canvas');
+const dCtx = drawCanvas.getContext('2d');
+
+let drawTool = 'pen';
+let drawColor = '#3ecf5e';
+let brushSize = 8;
+let isDrawing = false;
+let undoStack = [];
+let redoStack = [];
+let lastX = 0, lastY = 0;
+
+// Scale canvas for device pixel ratio
+function setupDrawCanvas() {
+  const dpr = window.devicePixelRatio || 1;
+  drawCanvas.width = 360 * dpr;
+  drawCanvas.height = 320 * dpr;
+  drawCanvas.style.width = '360px';
+  drawCanvas.style.height = '320px';
+  dCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  dCtx.clearRect(0, 0, 360, 320);
+}
+
+function saveUndo() {
+  undoStack.push(dCtx.getImageData(0, 0, drawCanvas.width, drawCanvas.height));
+  if (undoStack.length > 30) undoStack.shift();
+  redoStack = [];
+}
+
+function undo() {
+  if (!undoStack.length) return;
+  redoStack.push(dCtx.getImageData(0, 0, drawCanvas.width, drawCanvas.height));
+  dCtx.putImageData(undoStack.pop(), 0, 0);
+}
+function redo() {
+  if (!redoStack.length) return;
+  undoStack.push(dCtx.getImageData(0, 0, drawCanvas.width, drawCanvas.height));
+  dCtx.putImageData(redoStack.pop(), 0, 0);
+}
+
+function getCanvasPos(e) {
+  const rect = drawCanvas.getBoundingClientRect();
+  const touch = e.touches ? e.touches[0] : e;
+  return {
+    x: (touch.clientX - rect.left),
+    y: (touch.clientY - rect.top)
+  };
+}
+
+function startDraw(e) {
+  e.preventDefault();
+  const pos = getCanvasPos(e);
+  isDrawing = true;
+  lastX = pos.x; lastY = pos.y;
+  saveUndo();
+  if (drawTool === 'fill') { floodFill(Math.round(pos.x), Math.round(pos.y), drawColor); isDrawing = false; }
+}
+function doDraw(e) {
+  e.preventDefault();
+  if (!isDrawing) return;
+  const pos = getCanvasPos(e);
+  dCtx.beginPath();
+  dCtx.moveTo(lastX, lastY);
+  dCtx.lineTo(pos.x, pos.y);
+  dCtx.globalCompositeOperation = drawTool === 'eraser' ? 'destination-out' : 'source-over';
+  dCtx.strokeStyle = drawTool === 'eraser' ? 'rgba(0,0,0,1)' : drawColor;
+  dCtx.lineWidth = drawTool === 'eraser' ? brushSize * 2 : brushSize;
+  dCtx.lineCap = 'round';
+  dCtx.lineJoin = 'round';
+  dCtx.stroke();
+  dCtx.globalCompositeOperation = 'source-over';
+  lastX = pos.x; lastY = pos.y;
+}
+function stopDraw() { isDrawing = false; }
+
+drawCanvas.addEventListener('mousedown', startDraw);
+drawCanvas.addEventListener('mousemove', doDraw);
+drawCanvas.addEventListener('mouseup', stopDraw);
+drawCanvas.addEventListener('mouseleave', stopDraw);
+drawCanvas.addEventListener('touchstart', startDraw, { passive: false });
+drawCanvas.addEventListener('touchmove', doDraw, { passive: false });
+drawCanvas.addEventListener('touchend', stopDraw);
+
+// ---- Flood fill ----
+function floodFill(sx, sy, fillHex) {
+  const imgData = dCtx.getImageData(0, 0, drawCanvas.width, drawCanvas.height);
+  const data = imgData.data;
+  const dpr = window.devicePixelRatio || 1;
+  const px = Math.round(sx * dpr), py = Math.round(sy * dpr);
+  const W = drawCanvas.width, H = drawCanvas.height;
+  const idx = (py * W + px) * 4;
+  const tr = data[idx], tg = data[idx+1], tb = data[idx+2], ta = data[idx+3];
+  const fr = parseInt(fillHex.slice(1,3),16), fg = parseInt(fillHex.slice(3,5),16), fb = parseInt(fillHex.slice(5,7),16);
+  if (tr===fr && tg===fg && tb===fb) return;
+  const stack = [[px, py]];
+  const visited = new Uint8Array(W * H);
+  while (stack.length) {
+    const [x, y] = stack.pop();
+    if (x<0||x>=W||y<0||y>=H) continue;
+    const i = (y*W+x)*4;
+    if (visited[y*W+x]) continue;
+    if (data[i]!==tr || data[i+1]!==tg || data[i+2]!==tb || data[i+3]!==ta) continue;
+    visited[y*W+x] = 1;
+    data[i]=fr; data[i+1]=fg; data[i+2]=fb; data[i+3]=255;
+    stack.push([x+1,y],[x-1,y],[x,y+1],[x,y-1]);
+  }
+  dCtx.putImageData(imgData, 0, 0);
+}
+
+// ---- Tool buttons ----
+['pen','fill','eraser'].forEach(t => {
+  document.getElementById('tool-'+t).addEventListener('click', () => {
+    drawTool = t;
+    ['pen','fill','eraser'].forEach(x => document.getElementById('tool-'+x).classList.toggle('active', x===t));
+  });
+});
+document.querySelectorAll('.color-swatch').forEach(sw => {
+  sw.addEventListener('click', () => {
+    drawColor = sw.dataset.color;
+    document.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('active'));
+    sw.classList.add('active');
+    if (drawTool === 'eraser') { drawTool = 'pen'; document.getElementById('tool-pen').classList.add('active'); document.getElementById('tool-eraser').classList.remove('active'); }
+  });
+});
+document.getElementById('color-picker').addEventListener('input', e => { drawColor = e.target.value; });
+document.getElementById('brush-size').addEventListener('input', e => { brushSize = +e.target.value; });
+document.getElementById('btn-undo').addEventListener('click', undo);
+document.getElementById('btn-redo').addEventListener('click', redo);
+document.getElementById('btn-clear-draw').addEventListener('click', () => {
+  saveUndo();
+  dCtx.clearRect(0, 0, 360, 320);
+});
+
+// ============================================================
+//  POND SYSTEM
+// ============================================================
+const pondCanvas = document.getElementById('pond-canvas');
+const pCtx = pondCanvas.getContext('2d');
+let PW, PH;
+
+function resizePond() {
+  PW = pondCanvas.width = window.innerWidth;
+  PH = pondCanvas.height = window.innerHeight;
+  generateEnvironment();
+}
+window.addEventListener('resize', resizePond);
+
+// ---- Environment elements ----
+let lilyPads = [];
+let plants = [];
+let waves = [];
+
+function generateEnvironment() {
+  lilyPads = [];
+  plants = [];
+  const count = Math.floor(PW / 120) + 3;
+  for (let i = 0; i < count; i++) {
+    lilyPads.push({
+      x: 80 + Math.random() * (PW - 160),
+      y: PH * 0.4 + Math.random() * (PH * 0.45),
+      r: 28 + Math.random() * 22,
+      wobble: Math.random() * Math.PI * 2,
+      wobbleSpeed: 0.003 + Math.random() * 0.005,
+      flower: Math.random() < 0.35
+    });
+  }
+  const plantCount = Math.floor(PW / 180) + 2;
+  for (let i = 0; i < plantCount; i++) {
+    plants.push({
+      x: 30 + Math.random() * (PW - 60),
+      y: PH * 0.6 + Math.random() * (PH * 0.3),
+      stems: 2 + Math.floor(Math.random() * 3),
+      h: 40 + Math.random() * 60,
+      sway: Math.random() * Math.PI * 2,
+      swaySpeed: 0.004 + Math.random() * 0.005,
+      hue: 110 + Math.random() * 40
+    });
+  }
+}
+
+// ---- Water ripple elements ----
+function spawnRipple(x, y) {
+  const el = document.createElement('div');
+  el.className = 'ripple';
+  el.style.left = x + 'px';
+  el.style.top = y + 'px';
+  document.getElementById('screen-pond').appendChild(el);
+  setTimeout(() => el.remove(), 1000);
+}
+
+// ============================================================
+//  FROG SYSTEM
+// ============================================================
+const FROG_MAX = 15;
+const NAMES = ['Ribbit','Hopper','Bloop','Slippy','Greenie','Warty','Mossy','Paddy','Puddle','Boggart','Lilly','Mucky'];
+const BEHAVIORS = ['Lazy','Active','Hunter','Dreamy','Bouncy'];
+let frogs = [];
+let selectedFrog = null;
+let draggedFrog = null;
+let dragOffX = 0, dragOffY = 0;
+
+class Frog {
+  constructor(spriteDataURL) {
+    this.sprite = new Image();
+    this.sprite.src = spriteDataURL;
+    this.name = NAMES[Math.floor(Math.random() * NAMES.length)] + ' #' + (frogs.length + 1);
+    this.speed = 0.4 + Math.random() * 1.2;
+    this.jumpHeight = 30 + Math.random() * 60;
+    this.behavior = BEHAVIORS[Math.floor(Math.random() * BEHAVIORS.length)];
+    this.fliesEaten = 0;
+
+    // Position
+    this.x = PW * 0.3 + Math.random() * PW * 0.4;
+    this.y = PH * 0.55 + Math.random() * PH * 0.3;
+    this.targetX = this.x;
+    this.targetY = this.y;
+
+    // Animation state
+    this.state = 'idle'; // idle | hopping | eating
+    this.stateTimer = 0;
+    this.idleTime = this.randomIdleTime();
+    this.scaleX = 1; // for hop stretch
+    this.scaleY = 1;
+    this.blinkTimer = Math.random() * 200;
+    this.blinking = false;
+    this.z = 0; // vertical hop offset
+    this.vz = 0;
+    this.facingLeft = false;
+    this.targetFly = null;
+    this.breathe = 0;
+  }
+
+  randomIdleTime() {
+    const base = this.behavior === 'Lazy' ? 180 : this.behavior === 'Active' ? 40 : 90;
+    return base + Math.random() * base;
+  }
+
+  update(flies) {
+    this.breathe += 0.04;
+    this.stateTimer++;
+    this.blinkTimer--;
+    if (this.blinkTimer <= 0) { this.blinking = true; setTimeout(() => this.blinking = false, 150); this.blinkTimer = 120 + Math.random() * 180; }
+
+    if (this.state === 'idle') {
+      // look for flies if hunter/active
+      if (this.behavior !== 'Lazy' && flies.length) {
+        const near = flies.find(f => dist(this, f) < 180);
+        if (near) { this.targetFly = near; this.hopTo(near.x, near.y); return; }
+      }
+      if (this.stateTimer > this.idleTime) {
+        this.stateTimer = 0;
+        this.idleTime = this.randomIdleTime();
+        // pick new wander target
+        const pad = lilyPads[Math.floor(Math.random() * lilyPads.length)];
+        const tx = pad ? pad.x + (Math.random()-0.5)*pad.r : PW*0.2+Math.random()*PW*0.6;
+        const ty = pad ? pad.y + (Math.random()-0.5)*pad.r : PH*0.4+Math.random()*PH*0.4;
+        this.hopTo(tx, ty);
+      }
+    }
+
+    if (this.state === 'hopping') {
+      // move toward target
+      const dx = this.targetX - this.x, dy = this.targetY - this.y;
+      const d = Math.sqrt(dx*dx+dy*dy);
+      if (d > 4) {
+        const spd = this.speed * 2.5;
+        this.x += (dx/d)*spd;
+        this.y += (dy/d)*spd;
+        this.facingLeft = dx < 0;
+        // hop arc
+        this.vz -= 0.6;
+        this.z += this.vz;
+        if (this.z > 0) { this.z = 0; this.vz = 0; }
+        // stretch on ascent, squash on descent
+        this.scaleX = 1 - Math.abs(this.z)*0.003;
+        this.scaleY = 1 + Math.abs(this.z)*0.004;
+      } else {
+        this.x = this.targetX; this.y = this.targetY;
+        this.z = 0; this.scaleX = 1; this.scaleY = 1;
+        this.state = 'idle'; this.stateTimer = 0;
+        spawnRipple(this.x, this.y);
+        // eat fly?
+        if (this.targetFly) {
+          const fi = flies.indexOf(this.targetFly);
+          if (fi !== -1 && dist(this, this.targetFly) < 30) {
+            flies.splice(fi, 1);
+            this.fliesEaten++;
+            spawnEatParticle(this.x, this.y);
+          }
+          this.targetFly = null;
+        }
+      }
+    }
+  }
+
+  hopTo(tx, ty) {
+    this.targetX = tx;
+    this.targetY = ty;
+    this.state = 'hopping';
+    this.vz = -(this.jumpHeight * 0.12);
+    this.stateTimer = 0;
+  }
+
+  draw(ctx) {
+    ctx.save();
+    const drawY = this.y + this.z;
+    ctx.translate(this.x, drawY);
+    if (this.facingLeft) ctx.scale(-1, 1);
+    // breathing
+    const br = 1 + Math.sin(this.breathe) * 0.015;
+    ctx.scale(this.scaleX * br, this.scaleY * br);
+
+    const w = 56, h = 52;
+    if (this.sprite.complete && this.sprite.naturalWidth) {
+      ctx.drawImage(this.sprite, -w/2, -h/2, w, h);
+    } else {
+      // fallback blob frog
+      ctx.fillStyle = '#3ecf5e';
+      ctx.beginPath(); ctx.ellipse(0, 0, w/2, h/2, 0, 0, Math.PI*2); ctx.fill();
+    }
+
+    // blink overlay (white eye flash)
+    if (this.blinking) {
+      ctx.fillStyle = 'rgba(255,255,255,0.5)';
+      ctx.beginPath(); ctx.ellipse(-8, -10, 6, 4, 0, 0, Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(8, -10, 6, 4, 0, 0, Math.PI*2); ctx.fill();
+    }
+
+    ctx.restore();
+
+    // shadow
+    ctx.save();
+    ctx.globalAlpha = 0.15;
+    ctx.fillStyle = '#000';
+    ctx.beginPath(); ctx.ellipse(this.x, this.y + 4, 20, 6, 0, 0, Math.PI*2); ctx.fill();
+    ctx.restore();
+  }
+}
+
+function dist(a, b) { const dx=a.x-b.x,dy=a.y-b.y; return Math.sqrt(dx*dx+dy*dy); }
+
+// ---- Eat particle ----
+function spawnEatParticle(x, y) {
+  const emojis = ['✨','⭐','💚','🪲'];
+  for (let i = 0; i < 3; i++) {
+    const el = document.createElement('div');
+    el.className = 'particle';
+    el.textContent = emojis[Math.floor(Math.random()*emojis.length)];
+    el.style.left = (x - 10 + Math.random()*20) + 'px';
+    el.style.top = (y - 10 + Math.random()*20) + 'px';
+    document.getElementById('screen-pond').appendChild(el);
+    setTimeout(() => el.remove(), 800);
+  }
+}
+
+// ============================================================
+//  FLY SYSTEM
+// ============================================================
+let flies = [];
+const FLY_MAX = 8;
+
+class Fly {
+  constructor() {
+    this.x = 60 + Math.random() * (PW - 120);
+    this.y = PH * 0.25 + Math.random() * (PH * 0.5);
+    this.vx = (Math.random()-0.5) * 1.2;
+    this.vy = (Math.random()-0.5) * 1.2;
+    this.wobble = Math.random() * Math.PI * 2;
+    this.size = 6 + Math.random() * 4;
+  }
+  update() {
+    this.wobble += 0.1;
+    this.x += this.vx + Math.sin(this.wobble) * 0.4;
+    this.y += this.vy + Math.cos(this.wobble * 1.3) * 0.3;
+    // bounce off walls
+    if (this.x < 20 || this.x > PW-20) this.vx *= -1;
+    if (this.y < PH*0.2 || this.y > PH*0.9) this.vy *= -1;
+  }
+  draw(ctx) {
+    ctx.save();
+    ctx.translate(this.x, this.y);
+    // body
+    ctx.fillStyle = '#2c1e0e';
+    ctx.beginPath(); ctx.ellipse(0, 0, this.size*0.6, this.size*0.4, 0, 0, Math.PI*2); ctx.fill();
+    // wings
+    ctx.globalAlpha = 0.5;
+    ctx.fillStyle = '#aee6ff';
+    ctx.beginPath(); ctx.ellipse(-this.size*0.4, -this.size*0.3, this.size*0.5, this.size*0.25, -0.4, 0, Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(this.size*0.4, -this.size*0.3, this.size*0.5, this.size*0.25, 0.4, 0, Math.PI*2); ctx.fill();
+    ctx.restore();
+  }
+}
+
+let flyTimer = 0;
+function updateFlies() {
+  flyTimer++;
+  if (flyTimer > 160 && flies.length < FLY_MAX) {
+    flies.push(new Fly());
+    flyTimer = 0;
+  }
+  flies.forEach(f => f.update());
+}
+
+// ============================================================
+//  POND RENDER
+// ============================================================
+let waveTime = 0;
+
+function drawPond() {
+  waveTime += 0.015;
+  const ctx = pCtx;
+  ctx.clearRect(0, 0, PW, PH);
+
+  // Sky/water gradient
+  const sky = ctx.createLinearGradient(0, 0, 0, PH);
+  sky.addColorStop(0, '#0a2617');
+  sky.addColorStop(0.35, '#0d3520');
+  sky.addColorStop(1, '#0e4a2b');
+  ctx.fillStyle = sky;
+  ctx.fillRect(0, 0, PW, PH);
+
+  // Water surface shimmer
+  ctx.save();
+  ctx.globalAlpha = 0.15;
+  for (let i = 0; i < 6; i++) {
+    const wy = PH * (0.35 + i * 0.12);
+    ctx.strokeStyle = '#8ef5c0';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    for (let x = 0; x < PW; x += 4) {
+      const y = wy + Math.sin(x * 0.03 + waveTime + i) * 3;
+      x === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+  }
+  ctx.restore();
+
+  // Water body
+  const waterGrad = ctx.createLinearGradient(0, PH*0.38, 0, PH);
+  waterGrad.addColorStop(0, 'rgba(20,80,60,0.55)');
+  waterGrad.addColorStop(1, 'rgba(10,40,30,0.85)');
+  ctx.fillStyle = waterGrad;
+  ctx.fillRect(0, PH*0.38, PW, PH);
+
+  // Water light sparkles
+  ctx.save();
+  ctx.globalAlpha = 0.08;
+  for (let i = 0; i < 12; i++) {
+    const sx = (PW * ((i * 137.508) % 1));
+    const sy = PH * 0.5 + (PH * ((i * 73.1) % 0.4));
+    const sr = 2 + Math.sin(waveTime*1.5 + i) * 1;
+    ctx.fillStyle = '#7dffc0';
+    ctx.beginPath(); ctx.arc(sx, sy + Math.sin(waveTime + i*0.7)*8, sr, 0, Math.PI*2); ctx.fill();
+  }
+  ctx.restore();
+
+  // Plants
+  plants.forEach(p => {
+    p.sway += p.swaySpeed;
+    ctx.save();
+    ctx.translate(p.x, p.y);
+    for (let s = 0; s < p.stems; s++) {
+      const ox = (s - (p.stems-1)/2) * 10;
+      const sw = Math.sin(p.sway + s) * 6;
+      ctx.strokeStyle = `hsl(${p.hue}, 60%, 28%)`;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(ox, 0);
+      ctx.quadraticCurveTo(ox + sw, -p.h * 0.5, ox + sw * 1.5, -p.h);
+      ctx.stroke();
+      // leaf
+      ctx.fillStyle = `hsl(${p.hue}, 55%, 32%)`;
+      ctx.beginPath();
+      ctx.ellipse(ox + sw * 1.5, -p.h, 8, 4, Math.sin(p.sway+s)*0.5, 0, Math.PI*2);
+      ctx.fill();
+    }
+    ctx.restore();
+  });
+
+  // Lily pads
+  lilyPads.forEach(lp => {
+    lp.wobble += lp.wobbleSpeed;
+    const wobY = Math.sin(lp.wobble) * 2;
+    ctx.save();
+    ctx.translate(lp.x, lp.y + wobY);
+
+    // Shadow under lily
+    ctx.globalAlpha = 0.2;
+    ctx.fillStyle = '#000';
+    ctx.beginPath(); ctx.ellipse(0, 4, lp.r*0.9, lp.r*0.35, 0, 0, Math.PI*2); ctx.fill();
+    ctx.globalAlpha = 1;
+
+    // Pad body
+    ctx.fillStyle = '#2a7a3a';
+    ctx.beginPath();
+    ctx.moveTo(0, -lp.r);
+    for (let a = -Math.PI/2; a <= Math.PI*1.5; a += 0.15) {
+      const ar = lp.r + Math.sin(a*4)*2;
+      ctx.lineTo(Math.cos(a)*ar, Math.sin(a)*ar);
+    }
+    ctx.closePath(); ctx.fill();
+
+    // Pad highlights
+    ctx.strokeStyle = '#3d9e4e';
+    ctx.lineWidth = 1.5;
+    ctx.globalAlpha = 0.5;
+    ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(0,-lp.r); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(lp.r*0.7, lp.r*0.7); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(-lp.r*0.7, lp.r*0.7); ctx.stroke();
+    ctx.globalAlpha = 1;
+
+    // Notch
+    ctx.fillStyle = '#1f5c2c';
+    ctx.beginPath(); ctx.moveTo(0,-2); ctx.lineTo(-6,-lp.r); ctx.lineTo(6,-lp.r); ctx.closePath(); ctx.fill();
+
+    // Flower
+    if (lp.flower) {
+      const petalColors = ['#ff8fa3','#ffb3c6','#ffc8dd','#ffe4ec'];
+      for (let p = 0; p < 6; p++) {
+        const pa = (p / 6) * Math.PI * 2;
+        ctx.fillStyle = petalColors[p % petalColors.length];
+        ctx.beginPath();
+        ctx.ellipse(Math.cos(pa)*6, Math.sin(pa)*6, 5, 3, pa, 0, Math.PI*2);
+        ctx.fill();
+      }
+      ctx.fillStyle = '#ffe066';
+      ctx.beginPath(); ctx.arc(0, 0, 3.5, 0, Math.PI*2); ctx.fill();
+    }
+    ctx.restore();
+  });
+
+  // Frogs
+  frogs.forEach(f => {
+    f.update(flies);
+    f.draw(ctx);
+  });
+
+  // Flies
+  flies.forEach(f => f.draw(ctx));
+}
+
+// ============================================================
+//  MAIN LOOP
+// ============================================================
+let animId = null;
+function loop() {
+  if (!screens.pond.classList.contains('hidden')) {
+    updateFlies();
+    drawPond();
+  }
+  animId = requestAnimationFrame(loop);
+}
+
+// ============================================================
+//  FROG SPRITE GENERATION
+// ============================================================
+function buildFrogSprite() {
+  const sprite = document.createElement('canvas');
+  sprite.width = 128;
+  sprite.height = 112;
+  const sCtx = sprite.getContext('2d');
+  sCtx.clearRect(0, 0, sprite.width, sprite.height);
+  sCtx.drawImage(drawCanvas, 0, 0, sprite.width, sprite.height);
+  return sprite.toDataURL('image/png');
+}
+
+function addFrogToPond(dataURL) {
+  if (frogs.length >= FROG_MAX) {
+    frogs.shift(); // remove oldest
+  }
+  const f = new Frog(dataURL);
+  frogs.push(f);
+  document.getElementById('frog-count').textContent = `🐸 ${frogs.length} frog${frogs.length!==1?'s':''}`;
+}
+
+// ============================================================
+//  FROG STATS POPUP
+// ============================================================
+const statsEl = document.getElementById('frog-stats');
+function showStats(frog, x, y) {
+  document.getElementById('stat-name').textContent = '🐸 ' + frog.name;
+  document.getElementById('stat-speed').textContent = frog.speed.toFixed(1);
+  document.getElementById('stat-jump').textContent = frog.jumpHeight.toFixed(0) + 'px';
+  document.getElementById('stat-behavior').textContent = frog.behavior;
+  document.getElementById('stat-flies').textContent = frog.fliesEaten;
+  // position popup
+  const pw = 170, ph = 120;
+  let sx = x - pw/2, sy = y - ph - 20;
+  sx = Math.max(8, Math.min(PW - pw - 8, sx));
+  sy = Math.max(60, sy);
+  statsEl.style.left = sx + 'px';
+  statsEl.style.top = sy + 'px';
+  statsEl.classList.remove('hidden');
+  clearTimeout(statsEl._hide);
+  statsEl._hide = setTimeout(() => statsEl.classList.add('hidden'), 3000);
+}
+
+// ============================================================
+//  POND INPUT (tap frog, drag frog)
+// ============================================================
+function getPondPos(e) {
+  const touch = e.touches ? e.touches[0] : e;
+  const rect = pondCanvas.getBoundingClientRect();
+  return { x: touch.clientX - rect.left, y: touch.clientY - rect.top };
+}
+
+function frogAt(x, y) {
+  for (let i = frogs.length - 1; i >= 0; i--) {
+    const f = frogs[i];
+    if (Math.abs(f.x-x) < 40 && Math.abs((f.y+f.z)-y) < 40) return f;
+  }
+  return null;
+}
+
+pondCanvas.addEventListener('mousedown', e => {
+  const pos = getPondPos(e);
+  const f = frogAt(pos.x, pos.y);
+  if (f) { draggedFrog = f; dragOffX = f.x - pos.x; dragOffY = f.y - pos.y; }
+});
+pondCanvas.addEventListener('mousemove', e => {
+  if (!draggedFrog) return;
+  const pos = getPondPos(e);
+  draggedFrog.x = pos.x + dragOffX;
+  draggedFrog.y = pos.y + dragOffY;
+  draggedFrog.state = 'idle';
+});
+pondCanvas.addEventListener('mouseup', e => {
+  if (draggedFrog) { spawnRipple(draggedFrog.x, draggedFrog.y); draggedFrog = null; return; }
+  const pos = getPondPos(e);
+  const f = frogAt(pos.x, pos.y);
+  if (f) showStats(f, pos.x, pos.y);
+});
+
+pondCanvas.addEventListener('touchstart', e => {
+  e.preventDefault();
+  const pos = getPondPos(e);
+  const f = frogAt(pos.x, pos.y);
+  if (f) { draggedFrog = f; dragOffX = f.x - pos.x; dragOffY = f.y - pos.y; }
+}, { passive: false });
+pondCanvas.addEventListener('touchmove', e => {
+  e.preventDefault();
+  if (!draggedFrog) return;
+  const pos = getPondPos(e);
+  draggedFrog.x = pos.x + dragOffX;
+  draggedFrog.y = pos.y + dragOffY;
+  draggedFrog.state = 'idle';
+}, { passive: false });
+pondCanvas.addEventListener('touchend', e => {
+  if (draggedFrog) { spawnRipple(draggedFrog.x, draggedFrog.y); draggedFrog = null; return; }
+  const pos = getPondPos(e.changedTouches ? { touches: e.changedTouches } : e);
+  const f = frogAt(pos.x, pos.y);
+  if (f) showStats(f, pos.x, pos.y);
+});
+
+// ============================================================
+//  UI NAVIGATION
+// ============================================================
+document.getElementById('btn-start-draw').addEventListener('click', () => {
+  showScreen('draw');
+  setupDrawCanvas();
+});
+
+document.getElementById('btn-bring-to-life').addEventListener('click', () => {
+  const dataURL = buildFrogSprite();
+  addFrogToPond(dataURL);
+  // reset canvas
+  dCtx.clearRect(0, 0, 360, 320);
+  undoStack = []; redoStack = [];
+  showScreen('pond');
+});
+
+document.getElementById('btn-to-pond').addEventListener('click', () => {
+  showScreen('pond');
+});
+
+document.getElementById('btn-draw-another').addEventListener('click', () => {
+  showScreen('draw');
+  setupDrawCanvas();
+});
+
+document.getElementById('btn-clear-pond').addEventListener('click', () => {
+  frogs = [];
+  flies = [];
+  document.getElementById('frog-count').textContent = '🐸 0 frogs';
+  statsEl.classList.add('hidden');
+});
+
+// ============================================================
+//  BOOT
+// ============================================================
+resizePond();
+loop();
+showScreen('welcome');
+</script>
+</body>
+</html>

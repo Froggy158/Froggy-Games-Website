@@ -1,0 +1,1065 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
+<title>Frog Tunnel Fly</title>
+<style>
+  /* ===== RESET & BASE ===== */
+  *, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0; padding: 0;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  html, body {
+    width: 100%; height: 100%;
+    overflow: hidden;
+    background: #000;
+    font-family: 'Courier New', monospace;
+  }
+
+  body {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    touch-action: none;
+  }
+
+  /* ===== HOME BUTTON ===== */
+  .btn-home {
+    position: fixed;
+    top: 12px; left: 12px;
+    z-index: 100;
+    background: rgba(0,255,100,0.12);
+    border: 1px solid rgba(0,255,100,0.4);
+    color: #00ff64;
+    font-family: 'Courier New', monospace;
+    font-size: 14px;
+    padding: 6px 12px;
+    cursor: pointer;
+    border-radius: 4px;
+    letter-spacing: 1px;
+    outline: none;
+    transition: none;
+    /* No hover effects */
+  }
+  .btn-home:active {
+    background: rgba(0,255,100,0.25);
+  }
+
+  /* ===== CANVAS ===== */
+  #canvas {
+    display: block;
+    image-rendering: pixelated;
+    cursor: none;
+  }
+
+  /* ===== OVERLAY SCREENS ===== */
+  #overlay {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0,0,0,0.82);
+    z-index: 10;
+    gap: 0;
+  }
+
+  #overlay.hidden { display: none; }
+
+  .screen-title {
+    font-size: clamp(28px, 6vw, 52px);
+    font-weight: bold;
+    color: #00ff64;
+    text-shadow: 0 0 20px #00ff64, 0 0 60px #00ff64aa;
+    letter-spacing: 4px;
+    text-align: center;
+    line-height: 1.1;
+    margin-bottom: 8px;
+  }
+
+  .screen-sub {
+    font-size: clamp(11px, 2.5vw, 16px);
+    color: #39ff8a;
+    letter-spacing: 2px;
+    text-align: center;
+    opacity: 0.7;
+    margin-bottom: 32px;
+  }
+
+  .frog-logo {
+    font-size: clamp(48px, 12vw, 96px);
+    margin-bottom: 12px;
+    filter: drop-shadow(0 0 18px #00ff64);
+    animation: float 2s ease-in-out infinite;
+  }
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-10px); }
+  }
+
+  .instruction-box {
+    border: 1px solid rgba(0,255,100,0.3);
+    border-radius: 8px;
+    padding: 16px 28px;
+    margin-bottom: 28px;
+    background: rgba(0,255,100,0.05);
+    text-align: center;
+  }
+
+  .inst-line {
+    font-size: clamp(11px, 2.5vw, 14px);
+    color: #aaffcc;
+    letter-spacing: 1px;
+    line-height: 2;
+  }
+
+  .inst-key {
+    color: #00ff64;
+    background: rgba(0,255,100,0.15);
+    border: 1px solid rgba(0,255,100,0.4);
+    padding: 1px 6px;
+    border-radius: 3px;
+    font-size: 12px;
+  }
+
+  .score-display {
+    font-size: clamp(14px, 3vw, 22px);
+    color: #fff;
+    letter-spacing: 3px;
+    margin-bottom: 6px;
+    text-align: center;
+  }
+
+  .score-val {
+    color: #00ff64;
+    font-size: clamp(32px, 7vw, 56px);
+    display: block;
+    text-shadow: 0 0 20px #00ff64;
+    font-weight: bold;
+    margin-bottom: 4px;
+  }
+
+  .hi-score {
+    font-size: clamp(11px, 2.5vw, 14px);
+    color: #ffcc00;
+    letter-spacing: 2px;
+    margin-bottom: 28px;
+    text-shadow: 0 0 10px #ffcc00aa;
+  }
+
+  .start-btn {
+    background: transparent;
+    border: 2px solid #00ff64;
+    color: #00ff64;
+    font-family: 'Courier New', monospace;
+    font-size: clamp(14px, 3vw, 18px);
+    letter-spacing: 4px;
+    padding: 14px 36px;
+    cursor: pointer;
+    border-radius: 4px;
+    text-shadow: 0 0 10px #00ff64;
+    box-shadow: 0 0 20px rgba(0,255,100,0.3), inset 0 0 20px rgba(0,255,100,0.05);
+    outline: none;
+    animation: pulse-btn 1.5s ease-in-out infinite;
+  }
+
+  .start-btn:active {
+    background: rgba(0,255,100,0.2);
+  }
+
+  @keyframes pulse-btn {
+    0%, 100% { box-shadow: 0 0 20px rgba(0,255,100,0.3), inset 0 0 20px rgba(0,255,100,0.05); }
+    50% { box-shadow: 0 0 40px rgba(0,255,100,0.6), inset 0 0 20px rgba(0,255,100,0.1); }
+  }
+
+  .game-over-text {
+    font-size: clamp(22px, 5vw, 40px);
+    color: #ff3a3a;
+    text-shadow: 0 0 20px #ff3a3a, 0 0 50px #ff3a3aaa;
+    letter-spacing: 6px;
+    margin-bottom: 24px;
+    animation: flicker 0.15s infinite alternate;
+  }
+
+  @keyframes flicker {
+    from { opacity: 1; }
+    to { opacity: 0.85; }
+  }
+
+  /* ===== HUD ===== */
+  #hud {
+    position: fixed;
+    top: 12px; right: 16px;
+    z-index: 5;
+    text-align: right;
+    pointer-events: none;
+  }
+
+  #hud-score {
+    font-size: clamp(20px, 4vw, 28px);
+    color: #00ff64;
+    text-shadow: 0 0 12px #00ff64;
+    font-family: 'Courier New', monospace;
+    font-weight: bold;
+    letter-spacing: 2px;
+  }
+
+  #hud-hi {
+    font-size: clamp(10px, 2vw, 13px);
+    color: #ffcc00aa;
+    font-family: 'Courier New', monospace;
+    letter-spacing: 1px;
+  }
+
+  #pause-banner {
+    position: fixed;
+    top: 50%; left: 50%;
+    transform: translate(-50%,-50%);
+    font-size: clamp(24px, 6vw, 48px);
+    color: #00ff64;
+    text-shadow: 0 0 30px #00ff64;
+    font-family: 'Courier New', monospace;
+    letter-spacing: 8px;
+    z-index: 8;
+    pointer-events: none;
+    display: none;
+  }
+</style>
+</head>
+<body>
+
+<button class="btn-home" onclick="window.location.href='../index.html'">🏠 Home</button>
+
+<!-- HUD -->
+<div id="hud">
+  <div id="hud-score">0</div>
+  <div id="hud-hi">BEST: <span id="hud-hi-val">0</span></div>
+</div>
+
+<!-- Pause Banner -->
+<div id="pause-banner">⏸ PAUSED</div>
+
+<!-- Canvas -->
+<canvas id="canvas"></canvas>
+
+<!-- Overlay: Start Screen -->
+<div id="overlay">
+  <div id="screen-start">
+    <div class="frog-logo">🐸</div>
+    <div class="screen-title">FROG TUNNEL FLY</div>
+    <div class="screen-sub">SURVIVE THE SWAMP</div>
+    <div class="instruction-box">
+      <div class="inst-line"><span class="inst-key">HOLD</span> Space / Tap → FLY UP</div>
+      <div class="inst-line"><span class="inst-key">RELEASE</span> → DROP DOWN</div>
+      <div class="inst-line"><span class="inst-key">P</span> Pause &nbsp; <span class="inst-key">ENTER</span> Start</div>
+    </div>
+    <button class="start-btn" id="start-btn">▶ START</button>
+  </div>
+
+  <div id="screen-gameover" style="display:none; flex-direction:column; align-items:center;">
+    <div class="frog-logo" style="font-size:clamp(36px,8vw,64px); margin-bottom:8px;">💀</div>
+    <div class="game-over-text">SPLAT!</div>
+    <div class="score-display">SCORE<span class="score-val" id="go-score">0</span></div>
+    <div class="hi-score" id="go-hi">BEST: 0</div>
+    <button class="start-btn" id="restart-btn">▶ RETRY</button>
+  </div>
+</div>
+
+<script>
+// ===================================================
+// FROG TUNNEL FLY — main game script
+// ===================================================
+
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+
+// ===== CANVAS RESIZE =====
+function resize() {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+}
+resize();
+window.addEventListener('resize', () => { resize(); if (state === 'playing') generateTunnel(); });
+
+// ===== GAME STATE =====
+let state = 'start'; // 'start' | 'playing' | 'gameover' | 'paused'
+let prevState = 'playing';
+
+// ===== HIGH SCORE =====
+let hiScore = parseInt(localStorage.getItem('ftf_hi') || '0');
+document.getElementById('hud-hi-val').textContent = hiScore;
+
+// ===== INPUT STATE =====
+const input = { held: false };
+
+// ===== PLAYER =====
+const FROG = {
+  x: 0, y: 0,
+  vy: 0,
+  radius: 0,
+  // animation
+  frame: 0, frameTimer: 0,
+  // trail
+  trail: [],
+  // shake
+  shakeX: 0, shakeY: 0,
+};
+
+// ===== TUNNEL =====
+// Each tunnel segment: { topY, botY } at each x column
+let tunnelSegs = []; // array of {top, bot}
+const SEG_W = 6; // px per segment column
+
+// ===== PARTICLES =====
+let particles = [];
+
+// ===== GAME VARS =====
+let score = 0;
+let speed = 0;
+let scrollOffset = 0;
+let difficulty = 0;
+let frameCount = 0;
+let slowMo = false;
+let slowMoTimer = 0;
+let shakeTimer = 0;
+let shakeIntensity = 0;
+let paused = false;
+
+// ===== AUDIO =====
+let audioCtx = null;
+let flyGain = null;
+let flyOsc = null;
+let bgGain = null;
+
+function initAudio() {
+  if (audioCtx) return;
+  try {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    // Flying hum
+    flyOsc = audioCtx.createOscillator();
+    flyGain = audioCtx.createGain();
+    flyOsc.type = 'sawtooth';
+    flyOsc.frequency.value = 180;
+    flyGain.gain.value = 0;
+    flyOsc.connect(flyGain);
+    flyGain.connect(audioCtx.destination);
+    flyOsc.start();
+
+    // BG drone
+    const bgOsc = audioCtx.createOscillator();
+    bgGain = audioCtx.createGain();
+    bgOsc.type = 'sine';
+    bgOsc.frequency.value = 55;
+    bgGain.gain.value = 0.04;
+    bgOsc.connect(bgGain);
+    bgGain.connect(audioCtx.destination);
+    bgOsc.start();
+  } catch(e) {}
+}
+
+function playCrash() {
+  if (!audioCtx) return;
+  try {
+    const buf = audioCtx.createBuffer(1, audioCtx.sampleRate * 0.3, audioCtx.sampleRate);
+    const data = buf.getChannelData(0);
+    for (let i = 0; i < data.length; i++) {
+      data[i] = (Math.random() * 2 - 1) * (1 - i / data.length) * 0.8;
+    }
+    const src = audioCtx.createBufferSource();
+    const g = audioCtx.createGain();
+    g.gain.value = 0.6;
+    src.buffer = buf;
+    src.connect(g);
+    g.connect(audioCtx.destination);
+    src.start();
+  } catch(e) {}
+}
+
+// ===== TUNNEL GENERATION =====
+// Uses sinusoidal layers + noise for organic tunnel shape
+
+let tunnelParams = {
+  midY: 0,
+  gapH: 0,     // current gap height (px)
+  minGap: 0,
+};
+
+// Noise helper
+function noise(x, seed) {
+  return Math.sin(x * 0.018 + seed) * Math.cos(x * 0.007 - seed * 0.5)
+       + Math.sin(x * 0.042 + seed * 2.3) * 0.4;
+}
+
+function generateTunnel() {
+  const W = canvas.width;
+  const H = canvas.height;
+  const numSegs = Math.ceil(W / SEG_W) + 80; // extra segs beyond screen
+
+  tunnelParams.midY = H / 2;
+  tunnelParams.gapH = Math.min(H * 0.78, 420); // wider initial gap
+  tunnelParams.minGap = H * 0.38;              // much more forgiving minimum
+
+  tunnelSegs = [];
+  for (let i = 0; i < numSegs; i++) {
+    const x = i * SEG_W;
+    const mid = H / 2 + noise(x, 1.1) * H * 0.11;
+    const half = tunnelParams.gapH / 2;
+    tunnelSegs.push({ top: mid - half, bot: mid + half, x });
+  }
+}
+
+// Extend tunnel as we scroll
+function extendTunnel() {
+  const W = canvas.width;
+  const H = canvas.height;
+  const neededSegs = Math.ceil((scrollOffset + W) / SEG_W) + 80;
+  while (tunnelSegs.length < neededSegs) {
+    const i = tunnelSegs.length;
+    const x = i * SEG_W;
+
+    // Increase difficulty over time
+    const t = Math.min(1, difficulty / 12000); // 2x slower ramp
+    const currentGap = tunnelParams.gapH * (1 - t * 0.28); // shrink to only 72%
+    const gap = Math.max(tunnelParams.minGap, currentGap);
+
+    // Mid offset: multiple sine waves + occasional lurches
+    const prevMid = tunnelSegs.length > 0
+      ? (tunnelSegs[tunnelSegs.length - 1].top + tunnelSegs[tunnelSegs.length - 1].bot) / 2
+      : H / 2;
+
+    const waveA = Math.sin(x * 0.009 + 1.1) * H * 0.11;
+    const waveB = Math.sin(x * 0.023 - 0.7) * H * 0.055;
+    const waveC = Math.sin(x * 0.051 + 2.3) * H * 0.03 * t; // adds chaos at diff
+    const targetMid = H / 2 + waveA + waveB + waveC;
+
+    // Smooth approach to target
+    const mid = prevMid + (targetMid - prevMid) * 0.04;
+    const clampedMid = Math.max(gap / 2 + 20, Math.min(H - gap / 2 - 20, mid));
+
+    tunnelSegs.push({
+      x,
+      top: clampedMid - gap / 2,
+      bot: clampedMid + gap / 2,
+    });
+  }
+}
+
+// ===== INIT GAME =====
+function initGame() {
+  const W = canvas.width;
+  const H = canvas.height;
+
+  FROG.radius = Math.min(W, H) * 0.028;
+  FROG.x = W * 0.22;
+  FROG.y = H / 2;
+  FROG.vy = 0;
+  FROG.frame = 0;
+  FROG.frameTimer = 0;
+  FROG.trail = [];
+  FROG.shakeX = 0;
+  FROG.shakeY = 0;
+
+  score = 0;
+  scrollOffset = 0;
+  difficulty = 0;
+  frameCount = 0;
+  speed = 1.6;
+  slowMo = false;
+  slowMoTimer = 0;
+  shakeTimer = 0;
+  shakeIntensity = 0;
+  particles = [];
+
+  generateTunnel();
+  updateHUD();
+}
+
+// ===== PHYSICS CONFIG =====
+const GRAVITY = 0.16;
+const LIFT = -0.28;
+const MAX_VY = 4.5;
+
+// ===== UPDATE =====
+function update() {
+  if (state !== 'playing') return;
+
+  const dt = slowMo ? 0.35 : 1.0;
+  frameCount++;
+  difficulty += speed;
+
+  // Speed ramp
+  speed = 1.2 + difficulty * 0.0004;
+  speed = Math.min(speed, 3.5);
+
+  // Scroll
+  scrollOffset += speed * dt;
+  extendTunnel();
+
+  // Score = distance
+  score = Math.floor(scrollOffset / 10);
+  updateHUD();
+
+  // Frog physics
+  if (input.held) {
+    FROG.vy += LIFT * dt;
+  } else {
+    FROG.vy += GRAVITY * dt;
+  }
+  FROG.vy = Math.max(-MAX_VY, Math.min(MAX_VY, FROG.vy));
+  FROG.y += FROG.vy * dt;
+
+  // Frog animation frame
+  FROG.frameTimer += dt;
+  if (FROG.frameTimer > 8) { FROG.frameTimer = 0; FROG.frame = (FROG.frame + 1) % 4; }
+
+  // Trail
+  FROG.trail.unshift({ x: FROG.x, y: FROG.y, vy: FROG.vy });
+  if (FROG.trail.length > 22) FROG.trail.pop();
+
+  // Slow-mo timer
+  if (slowMo) {
+    slowMoTimer -= 1;
+    if (slowMoTimer <= 0) slowMo = false;
+  }
+
+  // Screen shake
+  if (shakeTimer > 0) {
+    shakeTimer--;
+    FROG.shakeX = (Math.random() - 0.5) * shakeIntensity;
+    FROG.shakeY = (Math.random() - 0.5) * shakeIntensity;
+  } else {
+    FROG.shakeX = 0; FROG.shakeY = 0;
+  }
+
+  // Fly sound mod
+  if (flyGain) {
+    const pitch = 160 + (input.held ? 60 : 0) + speed * 10;
+    flyOsc.frequency.setTargetAtTime(pitch, audioCtx.currentTime, 0.05);
+    flyGain.gain.setTargetAtTime(0.06, audioCtx.currentTime, 0.05);
+  }
+
+  // Collision + proximity
+  checkCollision();
+  spawnProximityParticles();
+  updateParticles(dt);
+}
+
+// ===== COLLISION =====
+function checkCollision() {
+  const H = canvas.height;
+
+  // Top/bottom screen
+  if (FROG.y - FROG.radius < 0 || FROG.y + FROG.radius > H) {
+    triggerGameOver();
+    return;
+  }
+
+  // Tunnel walls
+  const seg = getSegAtX(FROG.x + scrollOffset);
+  if (!seg) return;
+
+  if (FROG.y - FROG.radius < seg.top || FROG.y + FROG.radius > seg.bot) {
+    triggerGameOver();
+  }
+}
+
+function getSegAtX(worldX) {
+  const idx = Math.floor(worldX / SEG_W);
+  return tunnelSegs[idx] || null;
+}
+
+// ===== PROXIMITY PARTICLES =====
+function spawnProximityParticles() {
+  const seg = getSegAtX(FROG.x + scrollOffset);
+  if (!seg) return;
+
+  const distTop = (FROG.y - FROG.radius) - seg.top;
+  const distBot = seg.bot - (FROG.y + FROG.radius);
+  const threshold = 30 + FROG.radius;
+
+  if (distTop < threshold) {
+    spawnWallParticle(FROG.x, seg.top + 4, '#00ff64');
+    if (distTop < 12 && !slowMo) { slowMo = true; slowMoTimer = 18; }
+  }
+  if (distBot < threshold) {
+    spawnWallParticle(FROG.x, seg.bot - 4, '#00ff64');
+    if (distBot < 12 && !slowMo) { slowMo = true; slowMoTimer = 18; }
+  }
+}
+
+function spawnWallParticle(x, y, color) {
+  if (Math.random() > 0.35) return;
+  particles.push({
+    x, y,
+    vx: (Math.random() - 0.5) * 2,
+    vy: (Math.random() - 0.5) * 2,
+    life: 1, decay: 0.06 + Math.random() * 0.04,
+    size: 2 + Math.random() * 3,
+    color,
+    type: 'wall'
+  });
+}
+
+function spawnCrashParticles() {
+  for (let i = 0; i < 40; i++) {
+    const angle = Math.random() * Math.PI * 2;
+    const spd = 2 + Math.random() * 5;
+    particles.push({
+      x: FROG.x, y: FROG.y,
+      vx: Math.cos(angle) * spd,
+      vy: Math.sin(angle) * spd,
+      life: 1, decay: 0.02 + Math.random() * 0.03,
+      size: 3 + Math.random() * 6,
+      color: Math.random() > 0.5 ? '#ff3a3a' : '#ffcc00',
+      type: 'crash'
+    });
+  }
+}
+
+function updateParticles(dt) {
+  for (let i = particles.length - 1; i >= 0; i--) {
+    const p = particles[i];
+    p.x += p.vx * dt;
+    p.y += p.vy * dt;
+    p.life -= p.decay * dt;
+    if (p.life <= 0) particles.splice(i, 1);
+  }
+}
+
+// ===== TRIGGER GAME OVER =====
+function triggerGameOver() {
+  state = 'gameover';
+  spawnCrashParticles();
+  playCrash();
+  shakeTimer = 28;
+  shakeIntensity = 14;
+
+  if (flyGain) flyGain.gain.setTargetAtTime(0, audioCtx.currentTime, 0.1);
+
+  // Save hi score
+  if (score > hiScore) {
+    hiScore = score;
+    localStorage.setItem('ftf_hi', hiScore);
+  }
+
+  // Show game over screen
+  setTimeout(() => {
+    document.getElementById('screen-start').style.display = 'none';
+    document.getElementById('screen-gameover').style.display = 'flex';
+    document.getElementById('go-score').textContent = score;
+    document.getElementById('go-hi').textContent = 'BEST: ' + hiScore;
+    document.getElementById('hud-hi-val').textContent = hiScore;
+    document.getElementById('overlay').classList.remove('hidden');
+  }, 600);
+}
+
+// ===== HUD UPDATE =====
+function updateHUD() {
+  document.getElementById('hud-score').textContent = score;
+}
+
+// ===== DRAW =====
+function draw() {
+  const W = canvas.width;
+  const H = canvas.height;
+
+  // Apply shake
+  ctx.save();
+  ctx.translate(FROG.shakeX, FROG.shakeY);
+
+  // Background gradient — dark swamp
+  const bg = ctx.createLinearGradient(0, 0, 0, H);
+  bg.addColorStop(0, '#040d08');
+  bg.addColorStop(0.5, '#030b06');
+  bg.addColorStop(1, '#040d08');
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, W, H);
+
+  // Draw tunnel
+  drawTunnel(W, H);
+
+  // Draw trail
+  drawTrail();
+
+  // Draw frog (only if playing or game over still drawing)
+  if (state === 'playing' || state === 'gameover') {
+    drawFrog();
+  }
+
+  // Draw particles
+  drawParticles();
+
+  // Slow-mo vignette
+  if (slowMo) {
+    ctx.save();
+    const sv = ctx.createRadialGradient(W/2, H/2, H*0.2, W/2, H/2, H*0.7);
+    sv.addColorStop(0, 'rgba(0,0,0,0)');
+    sv.addColorStop(1, 'rgba(0,200,80,0.12)');
+    ctx.fillStyle = sv;
+    ctx.fillRect(0, 0, W, H);
+    ctx.restore();
+  }
+
+  ctx.restore();
+}
+
+// ===== DRAW TUNNEL =====
+function drawTunnel(W, H) {
+  const startSeg = Math.floor(scrollOffset / SEG_W);
+  const endSeg = Math.ceil((scrollOffset + W) / SEG_W) + 2;
+
+  // Build top and bottom paths
+  ctx.save();
+
+  // === TUNNEL DARK FILL (outside tunnel = solid dark rock) ===
+  // Top wall fill
+  ctx.beginPath();
+  ctx.moveTo(0, 0);
+  for (let i = startSeg; i <= endSeg && i < tunnelSegs.length; i++) {
+    const sx = tunnelSegs[i].x - scrollOffset;
+    ctx.lineTo(sx, tunnelSegs[i].top);
+  }
+  ctx.lineTo(W, 0);
+  ctx.closePath();
+  const topGrad = ctx.createLinearGradient(0, 0, 0, H * 0.5);
+  topGrad.addColorStop(0, '#061208');
+  topGrad.addColorStop(1, '#0a1e0f');
+  ctx.fillStyle = topGrad;
+  ctx.fill();
+
+  // Bottom wall fill
+  ctx.beginPath();
+  ctx.moveTo(0, H);
+  for (let i = startSeg; i <= endSeg && i < tunnelSegs.length; i++) {
+    const sx = tunnelSegs[i].x - scrollOffset;
+    ctx.lineTo(sx, tunnelSegs[i].bot);
+  }
+  ctx.lineTo(W, H);
+  ctx.closePath();
+  const botGrad = ctx.createLinearGradient(0, H * 0.5, 0, H);
+  botGrad.addColorStop(0, '#0a1e0f');
+  botGrad.addColorStop(1, '#061208');
+  ctx.fillStyle = botGrad;
+  ctx.fill();
+
+  // === GLOW LINES on tunnel edges ===
+  // Multiple passes for glow effect
+  const glowPasses = [
+    { width: 8, alpha: 0.08, color: '#00ff64' },
+    { width: 4, alpha: 0.25, color: '#00ff64' },
+    { width: 2, alpha: 0.7,  color: '#39ff8a' },
+    { width: 1, alpha: 1.0,  color: '#aaffcc' },
+  ];
+
+  for (const gp of glowPasses) {
+    // Top edge
+    ctx.beginPath();
+    for (let i = startSeg; i <= endSeg && i < tunnelSegs.length; i++) {
+      const sx = tunnelSegs[i].x - scrollOffset;
+      if (i === startSeg) ctx.moveTo(sx, tunnelSegs[i].top);
+      else ctx.lineTo(sx, tunnelSegs[i].top);
+    }
+    ctx.strokeStyle = `rgba(${hexToRGB(gp.color)},${gp.alpha})`;
+    ctx.lineWidth = gp.width;
+    ctx.lineJoin = 'round';
+    ctx.stroke();
+
+    // Bottom edge
+    ctx.beginPath();
+    for (let i = startSeg; i <= endSeg && i < tunnelSegs.length; i++) {
+      const sx = tunnelSegs[i].x - scrollOffset;
+      if (i === startSeg) ctx.moveTo(sx, tunnelSegs[i].bot);
+      else ctx.lineTo(sx, tunnelSegs[i].bot);
+    }
+    ctx.stroke();
+  }
+
+  // === TUNNEL INTERIOR glow/atmosphere ===
+  // Subtle center glow
+  const cSeg = tunnelSegs[Math.floor((scrollOffset + W * 0.4) / SEG_W)];
+  if (cSeg) {
+    const midY = (cSeg.top + cSeg.bot) / 2;
+    const rad = ctx.createRadialGradient(W * 0.4, midY, 0, W * 0.4, midY, W * 0.5);
+    rad.addColorStop(0, 'rgba(0,255,100,0.02)');
+    rad.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = rad;
+    ctx.fillRect(0, 0, W, H);
+  }
+
+  // === SCAN LINES retro effect ===
+  ctx.globalAlpha = 0.04;
+  for (let y = 0; y < H; y += 4) {
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0, y, W, 2);
+  }
+  ctx.globalAlpha = 1;
+
+  ctx.restore();
+}
+
+// ===== DRAW TRAIL =====
+function drawTrail() {
+  for (let i = FROG.trail.length - 1; i >= 0; i--) {
+    const t = FROG.trail[i];
+    const alpha = (1 - i / FROG.trail.length) * 0.45;
+    const r = FROG.radius * (1 - i / FROG.trail.length) * 0.8;
+
+    ctx.save();
+    ctx.globalAlpha = alpha;
+
+    const grad = ctx.createRadialGradient(t.x, t.y, 0, t.x, t.y, r * 2);
+    grad.addColorStop(0, '#00ff64');
+    grad.addColorStop(1, 'rgba(0,255,100,0)');
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.arc(t.x, t.y, r * 2, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.restore();
+  }
+}
+
+// ===== DRAW FROG =====
+function drawFrog() {
+  const x = FROG.x;
+  const y = FROG.y;
+  const r = FROG.radius;
+  const tilt = Math.atan2(FROG.vy, 8) * 0.7;
+
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(tilt);
+
+  // Glow
+  const glow = ctx.createRadialGradient(0, 0, r * 0.3, 0, 0, r * 2.5);
+  glow.addColorStop(0, 'rgba(0,255,100,0.3)');
+  glow.addColorStop(1, 'rgba(0,255,100,0)');
+  ctx.fillStyle = glow;
+  ctx.beginPath();
+  ctx.arc(0, 0, r * 2.5, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Body
+  ctx.fillStyle = '#00cc4a';
+  ctx.beginPath();
+  ctx.ellipse(0, 0, r * 1.2, r, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Belly
+  ctx.fillStyle = '#aaffcc';
+  ctx.beginPath();
+  ctx.ellipse(r * 0.1, r * 0.2, r * 0.65, r * 0.55, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Eyes (animated blink every ~90 frames)
+  const blink = (frameCount % 90 < 5);
+  const eyeR = r * 0.28;
+  const eyeY = -r * 0.3;
+
+  // Left eye
+  ctx.fillStyle = '#00ff64';
+  ctx.beginPath();
+  ctx.arc(-r * 0.42, eyeY, eyeR, 0, Math.PI * 2);
+  ctx.fill();
+  if (!blink) {
+    ctx.fillStyle = '#0a1e0f';
+    ctx.beginPath();
+    ctx.arc(-r * 0.42, eyeY, eyeR * 0.55, 0, Math.PI * 2);
+    ctx.fill();
+    // Eye shine
+    ctx.fillStyle = '#fff';
+    ctx.beginPath();
+    ctx.arc(-r * 0.42 + eyeR * 0.2, eyeY - eyeR * 0.2, eyeR * 0.18, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  // Right eye
+  ctx.fillStyle = '#00ff64';
+  ctx.beginPath();
+  ctx.arc(r * 0.42, eyeY, eyeR, 0, Math.PI * 2);
+  ctx.fill();
+  if (!blink) {
+    ctx.fillStyle = '#0a1e0f';
+    ctx.beginPath();
+    ctx.arc(r * 0.42, eyeY, eyeR * 0.55, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#fff';
+    ctx.beginPath();
+    ctx.arc(r * 0.42 + eyeR * 0.2, eyeY - eyeR * 0.2, eyeR * 0.18, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  // Legs animation based on frame
+  const legPhase = (FROG.frame % 4);
+  const legSpread = input.held ? 0.6 : 0.3;
+
+  ctx.strokeStyle = '#00bb3e';
+  ctx.lineWidth = r * 0.3;
+  ctx.lineCap = 'round';
+
+  // Back legs
+  ctx.beginPath();
+  ctx.moveTo(-r * 0.6, r * 0.4);
+  ctx.quadraticCurveTo(
+    -r * 1.1, r * (0.8 + legPhase * 0.12),
+    -r * 1.5, r * (0.4 + legSpread + Math.sin(legPhase) * 0.2)
+  );
+  ctx.stroke();
+
+  ctx.beginPath();
+  ctx.moveTo(r * 0.6, r * 0.4);
+  ctx.quadraticCurveTo(
+    r * 1.1, r * (0.8 + legPhase * 0.12),
+    r * 1.5, r * (0.4 + legSpread + Math.cos(legPhase) * 0.2)
+  );
+  ctx.stroke();
+
+  // Front legs / arms
+  ctx.lineWidth = r * 0.22;
+  ctx.beginPath();
+  ctx.moveTo(-r * 0.5, 0);
+  ctx.quadraticCurveTo(-r * 1.0, -r * (0.1 + legSpread * 0.3), -r * 1.2, r * 0.15);
+  ctx.stroke();
+
+  ctx.beginPath();
+  ctx.moveTo(r * 0.5, 0);
+  ctx.quadraticCurveTo(r * 1.0, -r * (0.1 + legSpread * 0.3), r * 1.2, r * 0.15);
+  ctx.stroke();
+
+  ctx.restore();
+}
+
+// ===== DRAW PARTICLES =====
+function drawParticles() {
+  for (const p of particles) {
+    ctx.save();
+    ctx.globalAlpha = p.life;
+    ctx.fillStyle = p.color;
+    ctx.shadowBlur = 8;
+    ctx.shadowColor = p.color;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.size * p.life, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+}
+
+// ===== UTILITY =====
+function hexToRGB(hex) {
+  const r = parseInt(hex.slice(1,3),16);
+  const g = parseInt(hex.slice(3,5),16);
+  const b = parseInt(hex.slice(5,7),16);
+  return `${r},${g},${b}`;
+}
+
+// ===== GAME LOOP =====
+let lastTime = 0;
+function loop(ts) {
+  requestAnimationFrame(loop);
+  if (state === 'playing') {
+    update();
+    draw();
+  } else if (state === 'gameover') {
+    // Still draw final frame + particles fading
+    shakeTimer > 0 ? shakeTimer-- : null;
+    FROG.shakeX = shakeTimer > 0 ? (Math.random()-0.5)*shakeIntensity : 0;
+    FROG.shakeY = shakeTimer > 0 ? (Math.random()-0.5)*shakeIntensity : 0;
+    updateParticles(1);
+    draw();
+  }
+}
+requestAnimationFrame(loop);
+
+// ===== START / RESTART =====
+function startGame() {
+  initAudio();
+  if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+  document.getElementById('overlay').classList.add('hidden');
+  initGame();
+  state = 'playing';
+}
+
+// ===== PAUSE =====
+function togglePause() {
+  if (state === 'playing') {
+    state = 'paused';
+    document.getElementById('pause-banner').style.display = 'block';
+    if (flyGain) flyGain.gain.setTargetAtTime(0, audioCtx.currentTime, 0.1);
+  } else if (state === 'paused') {
+    state = 'playing';
+    document.getElementById('pause-banner').style.display = 'none';
+  }
+}
+
+// ===== INPUT =====
+
+// Keyboard
+document.addEventListener('keydown', e => {
+  if (e.code === 'Space') { e.preventDefault(); input.held = true; }
+  if (e.code === 'Enter') {
+    if (state === 'start' || state === 'gameover') startGame();
+    else if (state === 'paused') togglePause();
+  }
+  if (e.key === 'p' || e.key === 'P') {
+    if (state === 'playing' || state === 'paused') togglePause();
+  }
+});
+
+document.addEventListener('keyup', e => {
+  if (e.code === 'Space') { input.held = false; }
+});
+
+// Mouse
+document.addEventListener('mousedown', e => {
+  if (state === 'playing') input.held = true;
+});
+document.addEventListener('mouseup', e => {
+  input.held = false;
+});
+
+// Touch
+document.addEventListener('touchstart', e => {
+  if (e.target.tagName === 'BUTTON') return;
+  e.preventDefault();
+  if (state === 'playing') input.held = true;
+}, { passive: false });
+document.addEventListener('touchend', e => {
+  if (e.target.tagName === 'BUTTON') return;
+  e.preventDefault();
+  input.held = false;
+}, { passive: false });
+document.addEventListener('touchcancel', e => {
+  input.held = false;
+}, { passive: false });
+
+// Prevent scrolling
+document.addEventListener('touchmove', e => e.preventDefault(), { passive: false });
+
+// Right-click
+document.addEventListener('contextmenu', e => e.preventDefault());
+
+// Buttons
+document.getElementById('start-btn').addEventListener('click', startGame);
+document.getElementById('restart-btn').addEventListener('click', startGame);
+
+// Update hi score display on load
+document.getElementById('hud-hi-val').textContent = hiScore;
+
+// Initial draw (dark bg while on start screen)
+(function initialDraw() {
+  const W = canvas.width;
+  const H = canvas.height;
+  ctx.fillStyle = '#040d08';
+  ctx.fillRect(0, 0, W, H);
+})();
+</script>
+</body>
+</html>
