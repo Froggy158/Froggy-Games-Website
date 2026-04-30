@@ -30,6 +30,32 @@
       --shadow-sm: 0 4px 14px rgba(26,92,42,0.10);
       --shadow-md: 0 10px 30px rgba(26,92,42,0.15);
       --shadow-lg: 0 20px 50px rgba(26,92,42,0.22);
+      --bg-body: #e8f8eb;
+      --modal-bg: rgba(255,255,255,0.97);
+      --input-bg: rgba(255,255,255,0.88);
+      --chip-bg: rgba(255,255,255,0.90);
+    }
+
+    body.dark {
+      --green-deep: #a8f0b8;
+      --green-mid: #6dd98a;
+      --green-light: #5ecf72;
+      --green-pale: #1e3d26;
+      --green-mint: #0d1f12;
+      --yellow: #f9e44a;
+      --yellow-dark: #e6c800;
+      --cream: #1a2e1e;
+      --text-dark: #d4f5da;
+      --text-mid: #9dd4aa;
+      --text-soft: #6aaa78;
+      --card-bg: rgba(20,44,26,0.95);
+      --shadow-sm: 0 4px 14px rgba(0,0,0,0.35);
+      --shadow-md: 0 10px 30px rgba(0,0,0,0.45);
+      --shadow-lg: 0 20px 50px rgba(0,0,0,0.55);
+      --bg-body: #0d1f12;
+      --modal-bg: rgba(18,38,22,0.98);
+      --input-bg: rgba(20,44,26,0.90);
+      --chip-bg: rgba(20,44,26,0.90);
     }
 
     html, body {
@@ -39,14 +65,14 @@
     }
 
     body {
-      background: var(--green-mint);
+      background: var(--bg-body);
       font-family: 'Nunito', sans-serif;
       color: var(--text-dark);
       overflow-x: hidden;
       position: relative;
+      transition: background 0.4s ease, color 0.4s ease;
     }
 
-    /* ---- Animated pond background ---- */
     .bg-scene {
       position: fixed;
       inset: 0;
@@ -63,9 +89,17 @@
         radial-gradient(ellipse 60% 40% at 20% -10%, #d4f5d8 0%, transparent 50%),
         radial-gradient(ellipse 50% 50% at 80% 5%, #c2efc9 0%, transparent 50%),
         linear-gradient(170deg, #e8f8eb 0%, #d0f0d6 40%, #b8e8c0 100%);
+      transition: opacity 0.4s ease;
     }
 
-    /* Lily pads */
+    body.dark .bg-gradient {
+      background:
+        radial-gradient(ellipse 80% 60% at 50% 110%, #0a2410 0%, transparent 60%),
+        radial-gradient(ellipse 60% 40% at 20% -10%, #0f2c18 0%, transparent 50%),
+        radial-gradient(ellipse 50% 50% at 80% 5%, #0d2414 0%, transparent 50%),
+        linear-gradient(170deg, #0d1f12 0%, #0a1c0f 40%, #071508 100%);
+    }
+
     .lily {
       position: absolute;
       border-radius: 50%;
@@ -83,7 +117,6 @@
       50%       { transform: translateY(-14px) scale(1.04); }
     }
 
-    /* Floating bubbles */
     .bubble {
       position: absolute;
       border-radius: 50%;
@@ -107,7 +140,6 @@
       100% { transform: translateY(-110vh) translateX(20px); opacity: 0; }
     }
 
-    /* ---- Layout ---- */
     .page-wrap {
       position: relative;
       z-index: 1;
@@ -116,14 +148,47 @@
       align-items: center;
       padding: 48px 20px 60px;
       min-height: 100vh;
+      overflow: visible;
     }
 
-    /* ---- Header ---- */
     .header {
       text-align: center;
-      margin-bottom: 48px;
+      margin-bottom: 32px;
       animation: fadeDown 0.7s ease both;
+      width: 100%;
+      max-width: 980px;
     }
+
+    .header-controls {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .icon-btn {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      border: 2px solid rgba(255,255,255,0.85);
+      background: var(--card-bg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 1.15rem;
+      box-shadow: var(--shadow-sm);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      padding: 0;
+      outline: none;
+      pointer-events: all;
+      position: relative;
+      z-index: 10;
+      -webkit-appearance: none;
+      touch-action: manipulation;
+    }
+
+    .icon-btn:active { transform: scale(0.88); }
 
     .frog-emoji {
       font-size: 4rem;
@@ -155,7 +220,125 @@
       letter-spacing: 0.5px;
     }
 
-    /* ---- Grid ---- */
+    .toolbar {
+      width: 100%;
+      max-width: 980px;
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+      animation: fadeDown 0.6s 0.12s ease both;
+    }
+
+    .search-wrap {
+      flex: 1;
+      position: relative;
+    }
+
+    .search-input {
+      width: 100%;
+      padding: 14px 20px 14px 52px;
+      border-radius: 50px;
+      border: 2px solid rgba(255,255,255,0.85);
+      background: var(--input-bg);
+      backdrop-filter: blur(12px);
+      font-family: 'Nunito', sans-serif;
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--text-dark);
+      outline: none;
+      box-shadow: var(--shadow-sm);
+      transition: border-color 0.2s, box-shadow 0.2s, background 0.4s;
+      -webkit-appearance: none;
+    }
+
+    .search-input::placeholder {
+      color: var(--text-soft);
+      font-weight: 600;
+    }
+
+    .search-input:focus {
+      border-color: var(--green-light);
+      box-shadow: var(--shadow-md), 0 0 0 3px rgba(76,175,80,0.15);
+    }
+
+    .search-icon {
+      position: absolute;
+      left: 18px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 1.2rem;
+      pointer-events: none;
+      line-height: 1;
+    }
+
+    .filter-btn {
+      flex-shrink: 0;
+      height: 50px;
+      padding: 0 18px;
+      border-radius: 50px;
+      border: 2px solid rgba(255,255,255,0.85);
+      background: var(--card-bg);
+      font-family: 'Nunito', sans-serif;
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--text-dark);
+      cursor: pointer;
+      box-shadow: var(--shadow-sm);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      outline: none;
+      pointer-events: all;
+      touch-action: manipulation;
+      -webkit-appearance: none;
+      transition: transform 0.2s ease;
+    }
+
+    .filter-btn:active { transform: scale(0.95); }
+
+    .sort-dropdown {
+      position: absolute;
+      top: calc(100% + 8px);
+      right: 0;
+      background: var(--modal-bg);
+      border-radius: 18px;
+      box-shadow: var(--shadow-md);
+      border: 2px solid rgba(255,255,255,0.85);
+      overflow: hidden;
+      z-index: 200;
+      min-width: 180px;
+      display: none;
+    }
+
+    .sort-dropdown.open { display: block; animation: fadeDown 0.2s ease both; }
+
+    .sort-option {
+      display: block;
+      width: 100%;
+      padding: 14px 20px;
+      border: none;
+      background: none;
+      font-family: 'Nunito', sans-serif;
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--text-dark);
+      text-align: left;
+      cursor: pointer;
+      border-bottom: 1px solid rgba(0,0,0,0.06);
+      pointer-events: all;
+      touch-action: manipulation;
+      -webkit-appearance: none;
+    }
+
+    .sort-option:last-child { border-bottom: none; }
+    .sort-option:active { background: var(--green-pale); }
+    .sort-option.active { color: var(--green-mid); }
+
+    .filter-wrap {
+      position: relative;
+      flex-shrink: 0;
+    }
+
     .games-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
@@ -164,7 +347,6 @@
       max-width: 980px;
     }
 
-    /* ---- Card ---- */
     .game-card {
       display: flex;
       flex-direction: column;
@@ -177,7 +359,8 @@
       border: 2px solid rgba(255,255,255,0.9);
       transition: transform 0.32s cubic-bezier(0.175,0.885,0.32,1.275),
                   box-shadow 0.32s ease,
-                  border-color 0.2s;
+                  border-color 0.2s,
+                  background 0.4s;
       animation: fadeUp 0.6s ease both;
       position: relative;
     }
@@ -193,7 +376,6 @@
     .game-card:nth-child(9)  { animation-delay: 0.74s; }
     .game-card:nth-child(10) { animation-delay: 0.82s; }
 
-    /* Thumbnail area */
     .card-thumb {
       width: 100%;
       aspect-ratio: 16 / 10;
@@ -207,11 +389,8 @@
       height: 100%;
       object-fit: cover;
       display: block;
-      transition: transform 0.4s ease;
     }
 
-
-    /* Shine overlay */
     .card-thumb::after {
       content: '';
       position: absolute;
@@ -220,17 +399,47 @@
       pointer-events: none;
     }
 
-    /* Card body */
+    .star-btn {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      z-index: 10;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: rgba(0,0,0,0.28);
+      border: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 1rem;
+      padding: 0;
+      outline: none;
+      pointer-events: all;
+      touch-action: manipulation;
+      transition: transform 0.2s ease, background 0.2s ease;
+      backdrop-filter: blur(4px);
+      -webkit-appearance: none;
+    }
+
+    .star-btn:active { transform: scale(0.82); }
+    .star-btn.fav { background: rgba(249,228,74,0.85); }
+
     .card-body {
-      padding: 18px 20px 20px;
+      padding: 10px 20px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .card-body-row {
       display: flex;
       align-items: center;
       gap: 14px;
     }
 
-    .card-text {
-      flex: 1;
-    }
+    .card-text { flex: 1; }
 
     .game-title {
       font-family: 'Fredoka One', cursive;
@@ -238,7 +447,7 @@
       color: var(--text-dark);
       letter-spacing: 0.3px;
       line-height: 1.2;
-      margin-bottom: 3px;
+      margin-bottom: 2px;
     }
 
     .game-desc {
@@ -247,7 +456,14 @@
       font-weight: 600;
     }
 
-    /* Play button */
+    .game-stats {
+      font-size: 0.72rem;
+      color: var(--text-soft);
+      font-weight: 600;
+      opacity: 0.75;
+      margin-top: 2px;
+    }
+
     .play-btn {
       flex-shrink: 0;
       width: 46px;
@@ -261,7 +477,6 @@
       transition: transform 0.2s ease, box-shadow 0.2s ease;
     }
 
-
     .play-btn svg {
       width: 18px;
       height: 18px;
@@ -269,11 +484,10 @@
       margin-left: 2px;
     }
 
-    /* Badge */
     .badge {
       position: absolute;
-      top: 12px;
-      right: 12px;
+      top: 10px;
+      right: 10px;
       background: var(--yellow);
       color: var(--green-deep);
       font-family: 'Fredoka One', cursive;
@@ -285,7 +499,6 @@
       text-transform: uppercase;
     }
 
-    /* ---- Footer ---- */
     .footer {
       margin-top: 52px;
       font-size: 0.78rem;
@@ -294,9 +507,37 @@
       letter-spacing: 0.5px;
       opacity: 0.7;
       animation: fadeUp 0.8s 0.6s ease both;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: center;
     }
 
-    /* ---- Keyframes ---- */
+    .footer-socials {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .footer-social-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      text-decoration: none;
+      color: var(--text-soft);
+      font-size: 0.78rem;
+      font-weight: 600;
+      opacity: 0.75;
+    }
+
+    .footer-social-link img {
+      width: 16px;
+      height: 16px;
+      display: block;
+    }
+
     @keyframes fadeDown {
       from { opacity: 0; transform: translateY(-24px); }
       to   { opacity: 1; transform: translateY(0); }
@@ -307,11 +548,210 @@
       to   { opacity: 1; transform: translateY(0); }
     }
 
-    /* ---- Responsive ---- */
+    .search-empty {
+      display: none;
+      text-align: center;
+      padding: 40px 20px;
+      color: var(--text-soft);
+      font-size: 1.05rem;
+      font-weight: 700;
+      width: 100%;
+    }
+    .search-empty .empty-icon { font-size: 2.8rem; display: block; margin-bottom: 10px; }
+
+    .recent-section, .fav-section {
+      width: 100%;
+      max-width: 980px;
+      margin-bottom: 28px;
+      animation: fadeDown 0.6s 0.2s ease both;
+    }
+
+    .section-label {
+      font-family: 'Fredoka One', cursive;
+      font-size: 1.1rem;
+      color: var(--green-deep);
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .recent-strip, .fav-strip {
+      display: flex;
+      gap: 12px;
+      overflow-x: auto;
+      padding-bottom: 6px;
+      scrollbar-width: thin;
+      scrollbar-color: var(--green-pale) transparent;
+    }
+
+    .recent-strip::-webkit-scrollbar,
+    .fav-strip::-webkit-scrollbar { height: 4px; }
+    .recent-strip::-webkit-scrollbar-track,
+    .fav-strip::-webkit-scrollbar-track { background: transparent; }
+    .recent-strip::-webkit-scrollbar-thumb,
+    .fav-strip::-webkit-scrollbar-thumb { background: var(--green-pale); border-radius: 2px; }
+
+    .recent-chip {
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: var(--chip-bg);
+      backdrop-filter: blur(8px);
+      border: 2px solid rgba(255,255,255,0.9);
+      border-radius: 16px;
+      padding: 8px 14px 8px 8px;
+      text-decoration: none;
+      color: var(--text-dark);
+      box-shadow: var(--shadow-sm);
+      transition: transform 0.22s cubic-bezier(0.175,0.885,0.32,1.275), box-shadow 0.22s;
+    }
+
+    .recent-chip-thumb {
+      width: 44px;
+      height: 44px;
+      border-radius: 10px;
+      overflow: hidden;
+      background: var(--green-pale);
+      flex-shrink: 0;
+    }
+
+    .recent-chip-thumb img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .recent-chip-name {
+      font-family: 'Fredoka One', cursive;
+      font-size: 0.95rem;
+      color: var(--text-dark);
+      white-space: nowrap;
+    }
+
+    .game-card.hidden { display: none; }
+
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.45);
+      z-index: 500;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s ease;
+    }
+
+    .modal-overlay.open {
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    .modal-sheet {
+      background: var(--modal-bg);
+      border-radius: 28px 28px 0 0;
+      width: 100%;
+      max-width: 560px;
+      padding: 28px 24px 40px;
+      transform: translateY(100%);
+      transition: transform 0.32s cubic-bezier(0.175,0.885,0.32,1.275);
+      max-height: 85vh;
+      overflow-y: auto;
+    }
+
+    .modal-overlay.open .modal-sheet {
+      transform: translateY(0);
+    }
+
+    .modal-handle {
+      width: 40px;
+      height: 4px;
+      background: var(--green-pale);
+      border-radius: 4px;
+      margin: 0 auto 22px;
+    }
+
+    .modal-title {
+      font-family: 'Fredoka One', cursive;
+      font-size: 1.5rem;
+      color: var(--green-deep);
+      margin: 0 0 20px;
+      text-align: center;
+    }
+
+    .achievement-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .achievement-item {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      background: var(--input-bg);
+      border-radius: 16px;
+      padding: 14px 16px;
+      border: 2px solid rgba(255,255,255,0.6);
+    }
+
+    .achievement-item.locked {
+      opacity: 0.45;
+      filter: grayscale(0.6);
+    }
+
+    .achievement-icon { font-size: 1.8rem; flex-shrink: 0; }
+    .achievement-info { flex: 1; }
+
+    .achievement-name {
+      font-family: 'Fredoka One', cursive;
+      font-size: 1rem;
+      color: var(--text-dark);
+      margin-bottom: 2px;
+    }
+
+    .achievement-desc {
+      font-size: 0.78rem;
+      color: var(--text-soft);
+      font-weight: 600;
+    }
+
+    .achievement-check { font-size: 1.2rem; }
+
+    .toast {
+      position: fixed;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%) translateY(80px);
+      background: var(--green-deep);
+      color: white;
+      font-family: 'Fredoka One', cursive;
+      font-size: 1rem;
+      padding: 12px 24px;
+      border-radius: 50px;
+      box-shadow: var(--shadow-md);
+      z-index: 600;
+      opacity: 0;
+      transition: transform 0.35s cubic-bezier(0.175,0.885,0.32,1.275), opacity 0.35s ease;
+      white-space: nowrap;
+      pointer-events: none;
+    }
+
+    .toast.show {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+    }
+
+    .icon-btn.muted { opacity: 0.5; }
+
     @media (max-width: 640px) {
       .page-wrap { padding: 36px 14px 48px; }
       .games-grid { gap: 16px; }
-      .card-body { padding: 14px 16px 16px; gap: 12px; }
+      .card-body { padding: 10px 16px 14px; gap: 4px; }
       .game-title { font-size: 1.1rem; }
       .play-btn { width: 40px; height: 40px; }
     }
@@ -319,7 +759,6 @@
 </head>
 <body>
 
-  <!-- Background scene -->
   <div class="bg-scene">
     <div class="bg-gradient"></div>
     <div class="lily lily-1"></div>
@@ -339,303 +778,1099 @@
 
   <div class="page-wrap">
 
-    <!-- Header -->
     <header class="header">
+      <div class="header-controls">
+        <button class="icon-btn" id="muteBtn" title="Mute/Unmute">🔊</button>
+        <button class="icon-btn" id="darkBtn" title="Dark/Light Mode">🌙</button>
+        <button class="icon-btn" id="achBtn" title="Achievements">🏆</button>
+      </div>
       <span class="frog-emoji">🐸</span>
       <h1>Frog World</h1>
-      <p class="tagline">18 hoppy games — pick your adventure!</p>
+      <p class="tagline">35 hoppy games — pick your adventure!</p>
     </header>
 
-    <!-- Games Grid -->
-    <div class="games-grid">
+    <div class="toolbar">
+      <div class="search-wrap">
+        <span class="search-icon">🔍</span>
+        <input class="search-input" id="searchInput" type="text" placeholder="Search games…" autocomplete="off" spellcheck="false">
+      </div>
+      <div class="filter-wrap">
+        <div class="sort-dropdown" id="sortDropdown">
+          <button class="sort-option active" data-sort="default">🐸 Default</button>
+          <button class="sort-option" data-sort="mostplayed">🔥 Most Played</button>
+          <button class="sort-option" data-sort="recent">🕐 Recently Added</button>
+          <button class="sort-option" data-sort="az">🔤 A – Z</button>
+        </div>
+      </div>
+    </div>
 
-      <a href="Click The Frog/index.html" class="game-card">
+    <div class="fav-section" id="favSection" style="display:none">
+      <div class="section-label">⭐ Favorites</div>
+      <div class="fav-strip" id="favStrip"></div>
+    </div>
+
+    <div class="recent-section" id="recentSection" style="display:none">
+      <div class="section-label">🕹️ Recently Played</div>
+      <div class="recent-strip" id="recentStrip"></div>
+    </div>
+
+    <div class="games-grid" id="gamesGrid">
+
+      <a href="Click The Frog/index.html" class="game-card" data-order="1">
         <div class="card-thumb">
+          <button class="star-btn" data-game="Click The Frog">☆</button>
           <img src="images/Click The Frog.png" alt="Click The Frog">
         </div>
         <div class="card-body">
-          <div class="card-text">
-            <div class="game-title">Click The Frog</div>
-            <div class="game-desc">Tap as fast as you can!</div>
+          <div class="card-body-row">
+            <div class="card-text">
+              <div class="game-title">Click The Frog</div>
+              <div class="game-desc">Tap as fast as you can!</div>
+            </div>
+            <div class="play-btn"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div>
           </div>
-          <div class="play-btn">
-            <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-          </div>
+          <div class="game-stats"></div>
         </div>
       </a>
 
-      <a href="Catch The Frog/index.html" class="game-card">
+      <a href="Catch The Frog/index.html" class="game-card" data-order="2">
         <div class="card-thumb">
+          <button class="star-btn" data-game="Catch The Frog">☆</button>
           <img src="images/Catch The Frog.png" alt="Catch The Frog">
         </div>
         <div class="card-body">
-          <div class="card-text">
-            <div class="game-title">Catch The Frog</div>
-            <div class="game-desc">Test your reflexes!</div>
+          <div class="card-body-row">
+            <div class="card-text">
+              <div class="game-title">Catch The Frog</div>
+              <div class="game-desc">Test your reflexes!</div>
+            </div>
+            <div class="play-btn"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div>
           </div>
-          <div class="play-btn">
-            <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-          </div>
+          <div class="game-stats"></div>
         </div>
       </a>
 
-      <a href="Drive The Frog/index.html" class="game-card">
+      <a href="Drive The Frog/index.html" class="game-card" data-order="3">
         <div class="card-thumb">
+          <button class="star-btn" data-game="Drive The Frog">☆</button>
           <img src="images/Drive The Frog.png" alt="Drive The Frog">
         </div>
         <div class="card-body">
-          <div class="card-text">
-            <div class="game-title">Drive The Frog</div>
-            <div class="game-desc">Race through frog highways!</div>
+          <div class="card-body-row">
+            <div class="card-text">
+              <div class="game-title">Drive The Frog</div>
+              <div class="game-desc">Race through frog highways!</div>
+            </div>
+            <div class="play-btn"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div>
           </div>
-          <div class="play-btn">
-            <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-          </div>
+          <div class="game-stats"></div>
         </div>
       </a>
 
-      <a href="Find The Frog/index.html" class="game-card">
+      <a href="Find The Frog/index.html" class="game-card" data-order="4">
         <div class="card-thumb">
+          <button class="star-btn" data-game="Find The Frog">☆</button>
           <img src="images/Find The Frog.png" alt="Find The Frog">
-          <span class="badge">New</span>
         </div>
         <div class="card-body">
-          <div class="card-text">
-            <div class="game-title">Find The Frog</div>
-            <div class="game-desc">Can you spot the hidden frog?</div>
+          <div class="card-body-row">
+            <div class="card-text">
+              <div class="game-title">Find The Frog</div>
+              <div class="game-desc">Can you spot the hidden frog?</div>
+            </div>
+            <div class="play-btn"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div>
           </div>
-          <div class="play-btn">
-            <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-          </div>
+          <div class="game-stats"></div>
         </div>
       </a>
 
-      <a href="Jump The Frog/index.html" class="game-card">
+      <a href="Jump The Frog/index.html" class="game-card" data-order="5">
         <div class="card-thumb">
+          <button class="star-btn" data-game="Jump The Frog">☆</button>
           <img src="images/Jump The Frog.png" alt="Jump The Frog">
-          <span class="badge">New</span>
         </div>
         <div class="card-body">
-          <div class="card-text">
-            <div class="game-title">Jump The Frog</div>
-            <div class="game-desc">Leap over obstacles!</div>
+          <div class="card-body-row">
+            <div class="card-text">
+              <div class="game-title">Jump The Frog</div>
+              <div class="game-desc">Leap over obstacles!</div>
+            </div>
+            <div class="play-btn"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div>
           </div>
-          <div class="play-btn">
-            <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-          </div>
+          <div class="game-stats"></div>
         </div>
       </a>
 
-      <a href="Feed The Frog/index.html" class="game-card">
+      <a href="Feed The Frog/index.html" class="game-card" data-order="6">
         <div class="card-thumb">
+          <button class="star-btn" data-game="Feed The Frog">☆</button>
           <img src="images/Feed The Frog.png" alt="Feed The Frog">
-          <span class="badge">New</span>
         </div>
         <div class="card-body">
-          <div class="card-text">
-            <div class="game-title">Feed The Frog</div>
-            <div class="game-desc">Catch flies & keep it fed!</div>
+          <div class="card-body-row">
+            <div class="card-text">
+              <div class="game-title">Feed The Frog</div>
+              <div class="game-desc">Catch flies &amp; keep it fed!</div>
+            </div>
+            <div class="play-btn"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div>
           </div>
-          <div class="play-btn">
-            <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-          </div>
+          <div class="game-stats"></div>
         </div>
       </a>
 
-      <a href="Run The Frog/index.html" class="game-card">
+      <a href="Frog Grab/index.html" class="game-card" data-order="7">
         <div class="card-thumb">
+          <button class="star-btn" data-game="Frog Grab">☆</button>
+          <img src="images/Frog Grab.png" alt="Frog Grab">
+        </div>
+        <div class="card-body">
+          <div class="card-body-row">
+            <div class="card-text">
+              <div class="game-title">Frog Grab</div>
+              <div class="game-desc">Catch flies!</div>
+            </div>
+            <div class="play-btn"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div>
+          </div>
+          <div class="game-stats"></div>
+        </div>
+      </a>
+
+      <a href="Run The Frog/index.html" class="game-card" data-order="8">
+        <div class="card-thumb">
+          <button class="star-btn" data-game="Run The Frog">☆</button>
           <img src="images/Run The Frog.png" alt="Run The Frog">
-          <span class="badge">New</span>
         </div>
         <div class="card-body">
-          <div class="card-text">
-            <div class="game-title">Run The Frog</div>
-            <div class="game-desc">Sprint and dodge to survive!</div>
+          <div class="card-body-row">
+            <div class="card-text">
+              <div class="game-title">Run The Frog</div>
+              <div class="game-desc">Sprint and dodge to survive!</div>
+            </div>
+            <div class="play-btn"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div>
           </div>
-          <div class="play-btn">
-            <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-          </div>
+          <div class="game-stats"></div>
         </div>
       </a>
 
-      <a href="Customize The Frog/index.html" class="game-card">
+      <a href="Customize The Frog/index.html" class="game-card" data-order="9">
         <div class="card-thumb">
+          <button class="star-btn" data-game="Customize The Frog">☆</button>
           <img src="images/Customize The Frog.png" alt="Customize The Frog">
-          <span class="badge">New</span>
         </div>
         <div class="card-body">
-          <div class="card-text">
-            <div class="game-title">Customize The Frog</div>
-            <div class="game-desc">Design your own frog!</div>
+          <div class="card-body-row">
+            <div class="card-text">
+              <div class="game-title">Customize The Frog</div>
+              <div class="game-desc">Design your own frog!</div>
+            </div>
+            <div class="play-btn"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div>
           </div>
-          <div class="play-btn">
-            <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-          </div>
+          <div class="game-stats"></div>
         </div>
       </a>
 
-      <a href="Draw The Frog/index.html" class="game-card">
+      <a href="Draw The Frog/index.html" class="game-card" data-order="10">
         <div class="card-thumb">
+          <button class="star-btn" data-game="Draw The Frog">☆</button>
           <img src="images/Draw The Frog.png" alt="Draw The Frog">
-          <span class="badge">New</span>
         </div>
         <div class="card-body">
-          <div class="card-text">
-            <div class="game-title">Draw The Frog</div>
-            <div class="game-desc">Unleash your inner artist!</div>
+          <div class="card-body-row">
+            <div class="card-text">
+              <div class="game-title">Draw The Frog</div>
+              <div class="game-desc">Unleash your inner artist!</div>
+            </div>
+            <div class="play-btn"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div>
           </div>
-          <div class="play-btn">
-            <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-          </div>
+          <div class="game-stats"></div>
         </div>
       </a>
 
-      <a href="Maze The Frog/index.html" class="game-card">
+      <a href="Maze The Frog/index.html" class="game-card" data-order="11">
         <div class="card-thumb">
+          <button class="star-btn" data-game="Maze The Frog">☆</button>
           <img src="images/Maze The Frog.png" alt="Maze The Frog">
-          <span class="badge">New</span>
         </div>
         <div class="card-body">
-          <div class="card-text">
-            <div class="game-title">Maze The Frog</div>
-            <div class="game-desc">Escape the frog maze!</div>
+          <div class="card-body-row">
+            <div class="card-text">
+              <div class="game-title">Maze The Frog</div>
+              <div class="game-desc">Escape the frog maze!</div>
+            </div>
+            <div class="play-btn"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div>
           </div>
-          <div class="play-btn">
-            <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-          </div>
+          <div class="game-stats"></div>
         </div>
       </a>
 
-      <a href="Crossy Frogs/index.html" class="game-card">
+      <a href="Crossy Frogs/index.html" class="game-card" data-order="12">
         <div class="card-thumb">
+          <button class="star-btn" data-game="Crossy Frogs">☆</button>
           <img src="images/Crossy Frogs.png" alt="Crossy Frogs">
           <span class="badge">New</span>
         </div>
         <div class="card-body">
-          <div class="card-text">
-            <div class="game-title">Crossy Frogs</div>
-            <div class="game-desc">Cross the road and avoid the obstacles!</div>
+          <div class="card-body-row">
+            <div class="card-text">
+              <div class="game-title">Crossy Frogs</div>
+              <div class="game-desc">Cross the road and avoid the obstacles!</div>
+            </div>
+            <div class="play-btn"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div>
           </div>
-          <div class="play-btn">
-            <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-          </div>
+          <div class="game-stats"></div>
         </div>
       </a>
 
-      <a href="Flappy Frog/index.html" class="game-card">
+      <a href="Flappy Frog/index.html" class="game-card" data-order="13">
         <div class="card-thumb">
+          <button class="star-btn" data-game="Flappy Frog">☆</button>
           <img src="images/Flappy Frogs.png" alt="Flappy Frog">
           <span class="badge">New</span>
         </div>
         <div class="card-body">
-          <div class="card-text">
-            <div class="game-title">Flappy Frog</div>
-            <div class="game-desc">Flap your way through the pipes!</div>
+          <div class="card-body-row">
+            <div class="card-text">
+              <div class="game-title">Flappy Frog</div>
+              <div class="game-desc">Flap your way through the pipes!</div>
+            </div>
+            <div class="play-btn"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div>
           </div>
-          <div class="play-btn">
-            <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-          </div>
+          <div class="game-stats"></div>
         </div>
       </a>
 
-      <a href="Frog Break/index.html" class="game-card">
+      <a href="Frog Break/index.html" class="game-card" data-order="14">
         <div class="card-thumb">
+          <button class="star-btn" data-game="Frog Break">☆</button>
           <img src="images/Frog Break.png" alt="Frog Break">
           <span class="badge">New</span>
         </div>
         <div class="card-body">
-          <div class="card-text">
-            <div class="game-title">Frog Break</div>
-            <div class="game-desc">Bounce the frog and break blocks!</div>
+          <div class="card-body-row">
+            <div class="card-text">
+              <div class="game-title">Frog Break</div>
+              <div class="game-desc">Bounce the frog and break blocks!</div>
+            </div>
+            <div class="play-btn"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div>
           </div>
-          <div class="play-btn">
-            <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-          </div>
+          <div class="game-stats"></div>
         </div>
       </a>
 
-      <a href="Frog Memory/index.html" class="game-card">
+      <a href="Tap The Frog/index.html" class="game-card" data-order="15">
         <div class="card-thumb">
+          <button class="star-btn" data-game="Tap The Frog">☆</button>
+          <img src="images/Tap The Frog.png" alt="Tap The Frog">
+          <span class="badge">New</span>
+        </div>
+        <div class="card-body">
+          <div class="card-body-row">
+            <div class="card-text">
+              <div class="game-title">Tap The Frog</div>
+              <div class="game-desc">Tap the frog to get more clicks!</div>
+            </div>
+            <div class="play-btn"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div>
+          </div>
+          <div class="game-stats"></div>
+        </div>
+      </a>
+
+      <a href="Frog Memory/index.html" class="game-card" data-order="16">
+        <div class="card-thumb">
+          <button class="star-btn" data-game="Frog Memory">☆</button>
           <img src="images/Memory Frog.png" alt="Frog Memory">
           <span class="badge">New</span>
         </div>
         <div class="card-body">
-          <div class="card-text">
-            <div class="game-title">Frog Memory</div>
-            <div class="game-desc">Match the things and remember their positions!</div>
+          <div class="card-body-row">
+            <div class="card-text">
+              <div class="game-title">Frog Memory</div>
+              <div class="game-desc">Match the things and remember their positions!</div>
+            </div>
+            <div class="play-btn"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div>
           </div>
-          <div class="play-btn">
-            <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-          </div>
+          <div class="game-stats"></div>
         </div>
       </a>
 
-      <a href="Frog Snake/index.html" class="game-card">
+      <a href="Frog Snake/index.html" class="game-card" data-order="17">
         <div class="card-thumb">
+          <button class="star-btn" data-game="Frog Snake">☆</button>
           <img src="images/Frog Snake.png" alt="Frog Snake">
           <span class="badge">New</span>
         </div>
         <div class="card-body">
-          <div class="card-text">
-            <div class="game-title">Frog Snake</div>
-            <div class="game-desc">Control the snake and eat the flies!</div>
+          <div class="card-body-row">
+            <div class="card-text">
+              <div class="game-title">Frog Snake</div>
+              <div class="game-desc">Control the snake and eat the flies!</div>
+            </div>
+            <div class="play-btn"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div>
           </div>
-          <div class="play-btn">
-            <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-          </div>
+          <div class="game-stats"></div>
         </div>
       </a>
 
-      <a href="Pond Panic/index.html" class="game-card">
+      <a href="Pond Panic/index.html" class="game-card" data-order="18">
         <div class="card-thumb">
+          <button class="star-btn" data-game="Pond Panic">☆</button>
           <img src="images/Pond Panic.png" alt="Pond Panic">
           <span class="badge">New</span>
         </div>
         <div class="card-body">
-          <div class="card-text">
-            <div class="game-title">Pond Panic</div>
-            <div class="game-desc">Dodge the meteors!</div>
+          <div class="card-body-row">
+            <div class="card-text">
+              <div class="game-title">Pond Panic</div>
+              <div class="game-desc">Dodge the meteors!</div>
+            </div>
+            <div class="play-btn"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div>
           </div>
-          <div class="play-btn">
-            <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-          </div>
+          <div class="game-stats"></div>
         </div>
       </a>
 
-      <a href="Frog Shoot/index.html" class="game-card">
+      <a href="Frog Shoot/index.html" class="game-card" data-order="19">
         <div class="card-thumb">
-          <img src="images/Frog Shoot.png" alt="Pond Panic">
+          <button class="star-btn" data-game="Frog Shoot">☆</button>
+          <img src="images/Frog Shoot.png" alt="Frog Shoot">
           <span class="badge">New</span>
         </div>
         <div class="card-body">
-          <div class="card-text">
-            <div class="game-title">Frog Shoot</div>
-            <div class="game-desc">Shoot the flies!</div>
+          <div class="card-body-row">
+            <div class="card-text">
+              <div class="game-title">Frog Shoot</div>
+              <div class="game-desc">Shoot the flies!</div>
+            </div>
+            <div class="play-btn"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div>
           </div>
-          <div class="play-btn">
-            <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-          </div>
+          <div class="game-stats"></div>
         </div>
       </a>
 
-      <a href="Solve The Frog/index.html" class="game-card">
+      <a href="Solve The Frog/index.html" class="game-card" data-order="20">
         <div class="card-thumb">
-          <img src="images/Solve The Frog.png" alt="Pond Panic">
+          <button class="star-btn" data-game="Solve The Frog">☆</button>
+          <img src="images/Solve The Frog.png" alt="Solve The Frog">
           <span class="badge">New</span>
         </div>
         <div class="card-body">
-          <div class="card-text">
-            <div class="game-title">Solve The Frog</div>
-            <div class="game-desc">Solve the frog puzzles!</div>
+          <div class="card-body-row">
+            <div class="card-text">
+              <div class="game-title">Solve The Frog</div>
+              <div class="game-desc">Solve the frog puzzles!</div>
+            </div>
+            <div class="play-btn"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div>
           </div>
-          <div class="play-btn">
-            <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-          </div>
+          <div class="game-stats"></div>
         </div>
       </a>
 
-    </div>🌿 Frog World &mdash; 2.0.6</p>
+      <a href="Pac Frog/index.html" class="game-card" data-order="21">
+        <div class="card-thumb">
+          <button class="star-btn" data-game="Pac Frog">☆</button>
+          <img src="images/Pac Frog.png" alt="Pac Frog">
+          <span class="badge">New</span>
+        </div>
+        <div class="card-body">
+          <div class="card-body-row">
+            <div class="card-text">
+              <div class="game-title">Pac Frog</div>
+              <div class="game-desc">Eat the flies!</div>
+            </div>
+            <div class="play-btn"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div>
+          </div>
+          <div class="game-stats"></div>
+        </div>
+      </a>
+
+      <a href="Frog Bridge/index.html" class="game-card" data-order="22">
+        <div class="card-thumb">
+          <button class="star-btn" data-game="Frog Bridge">☆</button>
+          <img src="images/Frog Bridge.png" alt="Frog Bridge">
+          <span class="badge">New</span>
+        </div>
+        <div class="card-body">
+          <div class="card-body-row">
+            <div class="card-text">
+              <div class="game-title">Frog Bridge</div>
+              <div class="game-desc">Extend the tongue and dont fall!</div>
+            </div>
+            <div class="play-btn"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div>
+          </div>
+          <div class="game-stats"></div>
+        </div>
+      </a>
+
+      <a href="Frog Dash/index.html" class="game-card" data-order="23">
+        <div class="card-thumb">
+          <button class="star-btn" data-game="Frog Dash">☆</button>
+          <img src="images/Frog Dash.png" alt="Frog Dash">
+          <span class="badge">New</span>
+        </div>
+        <div class="card-body">
+          <div class="card-body-row">
+            <div class="card-text">
+              <div class="game-title">Frog Dash</div>
+              <div class="game-desc">Catch the flies and dont get hit!</div>
+            </div>
+            <div class="play-btn"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div>
+          </div>
+          <div class="game-stats"></div>
+        </div>
+      </a>
+
+      <a href="Frog Merge/index.html" class="game-card" data-order="24">
+        <div class="card-thumb">
+          <button class="star-btn" data-game="Frog Merge">☆</button>
+          <img src="images/Frog Merge.png" alt="Frog Merge">
+          <span class="badge">New</span>
+        </div>
+        <div class="card-body">
+          <div class="card-body-row">
+            <div class="card-text">
+              <div class="game-title">Frog Merge</div>
+              <div class="game-desc">Merge the frogs and survive!</div>
+            </div>
+            <div class="play-btn"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div>
+          </div>
+          <div class="game-stats"></div>
+        </div>
+      </a>
+
+      <a href="Frog Pong/index.html" class="game-card" data-order="25">
+        <div class="card-thumb">
+          <button class="star-btn" data-game="Frog Pong">☆</button>
+          <img src="images/Frog Pong.png" alt="Frog Pong">
+          <span class="badge">New</span>
+        </div>
+        <div class="card-body">
+          <div class="card-body-row">
+            <div class="card-text">
+              <div class="game-title">Frog Pong</div>
+              <div class="game-desc">Throw the ball and dont lose!</div>
+            </div>
+            <div class="play-btn"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div>
+          </div>
+          <div class="game-stats"></div>
+        </div>
+      </a>
+
+      <a href="Frog Runner/index.html" class="game-card" data-order="26">
+        <div class="card-thumb">
+          <button class="star-btn" data-game="Frog Runner">☆</button>
+          <img src="images/Frog Runner.png" alt="Frog Runner">
+          <span class="badge">New</span>
+        </div>
+        <div class="card-body">
+          <div class="card-body-row">
+            <div class="card-text">
+              <div class="game-title">Frog Runner</div>
+              <div class="game-desc">Just keep running!</div>
+            </div>
+            <div class="play-btn"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div>
+          </div>
+          <div class="game-stats"></div>
+        </div>
+      </a>
+
+      <a href="Frog Stack/index.html" class="game-card" data-order="27">
+        <div class="card-thumb">
+          <button class="star-btn" data-game="Frog Stack">☆</button>
+          <img src="images/Frog Stack.png" alt="Frog Stack">
+          <span class="badge">New</span>
+        </div>
+        <div class="card-body">
+          <div class="card-body-row">
+            <div class="card-text">
+              <div class="game-title">Frog Stack</div>
+              <div class="game-desc">Stack the frog and dont miss!</div>
+            </div>
+            <div class="play-btn"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div>
+          </div>
+          <div class="game-stats"></div>
+        </div>
+      </a>
+
+      <a href="Frog Tetris/index.html" class="game-card" data-order="28">
+        <div class="card-thumb">
+          <button class="star-btn" data-game="Frog Teris">☆</button>
+          <img src="images/Frog Tetris.png" alt="Frog Tetris">
+          <span class="badge">New</span>
+        </div>
+        <div class="card-body">
+          <div class="card-body-row">
+            <div class="card-text">
+              <div class="game-title">Frog Tetris</div>
+              <div class="game-desc">Align the blocks!</div>
+            </div>
+            <div class="play-btn"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div>
+          </div>
+          <div class="game-stats"></div>
+        </div>
+      </a>
+
+      <a href="Frog Tunnel Fly/index.html" class="game-card" data-order="29">
+        <div class="card-thumb">
+          <button class="star-btn" data-game="Frog Tunnel Fly">☆</button>
+          <img src="images/Frog Tunnel Fly.png" alt="Frog Tunnel Fly">
+          <span class="badge">New</span>
+        </div>
+        <div class="card-body">
+          <div class="card-body-row">
+            <div class="card-text">
+              <div class="game-title">Frog Tunnel Fly</div>
+              <div class="game-desc">Dont get hit by the tunnels!</div>
+            </div>
+            <div class="play-btn"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div>
+          </div>
+          <div class="game-stats"></div>
+        </div>
+      </a>
+
+      <a href="Frog Bros/index.html" class="game-card" data-order="30">
+        <div class="card-thumb">
+          <button class="star-btn" data-game="Frog Bros">☆</button>
+          <img src="images/Frog Bros.png" alt="Frog Bros">
+          <span class="badge">New</span>
+        </div>
+        <div class="card-body">
+          <div class="card-body-row">
+            <div class="card-text">
+              <div class="game-title">Frog Bros</div>
+              <div class="game-desc">Dont get hit by the enemies!</div>
+            </div>
+            <div class="play-btn"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div>
+          </div>
+          <div class="game-stats"></div>
+        </div>
+      </a>
+
+      <a href="Frogquarium/index.html" class="game-card" data-order="31">
+        <div class="card-thumb">
+          <button class="star-btn" data-game="Frogquarium">☆</button>
+          <img src="images/Frogquarium.png" alt="Frogquarium">
+          <span class="badge">New</span>
+        </div>
+        <div class="card-body">
+          <div class="card-body-row">
+            <div class="card-text">
+              <div class="game-title">Frogquarium</div>
+              <div class="game-desc">Unleash your imagination!</div>
+            </div>
+            <div class="play-btn"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div>
+          </div>
+          <div class="game-stats"></div>
+        </div>
+      </a>
+
+      <a href="Rainy Pond/index.html" class="game-card" data-order="32">
+        <div class="card-thumb">
+          <button class="star-btn" data-game="Rainy Pond">☆</button>
+          <img src="images/Rainy Pond.png" alt="Rainy Pond">
+          <span class="badge">New</span>
+        </div>
+        <div class="card-body">
+          <div class="card-body-row">
+            <div class="card-text">
+              <div class="game-title">Rainy Pond</div>
+              <div class="game-desc">Just chill with the frogs!</div>
+            </div>
+            <div class="play-btn"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div>
+          </div>
+          <div class="game-stats"></div>
+        </div>
+      </a>
+
+      <a href="Peaceful Pond/index.html" class="game-card" data-order="33">
+        <div class="card-thumb">
+          <button class="star-btn" data-game="Peaceful Pond">☆</button>
+          <img src="images/a.png" alt="Peaceful Pond">
+          <span class="badge">New</span>
+        </div>
+        <div class="card-body">
+          <div class="card-body-row">
+            <div class="card-text">
+              <div class="game-title">Peaceful Pond</div>
+              <div class="game-desc">Just a peaceful frog!</div>
+            </div>
+            <div class="play-btn"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div>
+          </div>
+          <div class="game-stats"></div>
+        </div>
+      </a>
+
+      <a href="Frog Swipe Catch/index.html" class="game-card" data-order="34">
+        <div class="card-thumb">
+          <button class="star-btn" data-game="Frog Swipe Catch">☆</button>
+          <img src="images/Frog Swipe Catch.png" alt="Frog Swipe Catch">
+          <span class="badge">New</span>
+        </div>
+        <div class="card-body">
+          <div class="card-body-row">
+            <div class="card-text">
+              <div class="game-title">Frog Swipe Catch</div>
+              <div class="game-desc">Swipe to catch the flies!</div>
+            </div>
+            <div class="play-btn"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div>
+          </div>
+          <div class="game-stats"></div>
+        </div>
+      </a>
+
+      <div class="search-empty" id="searchEmpty">
+        <span class="empty-icon">🐸</span>
+        Ribbit… nothing here!
+      </div>
+
+    </div>
+
+    <p class="footer">🐸 Frog World &mdash; 4.0.0
+      <span class="footer-socials">
+        <a href="https://www.youtube.com/@FroggyFroger123" target="_blank" class="footer-social-link"><img src="images/Youtube.svg" alt="YouTube">FrogTube</a>
+        <a href="https://x.com/FrogerFrog71131" target="_blank" class="footer-social-link"><img src="images/X.svg" alt="X">X</a>
+        <a href="https://www.instagram.com/froggyfroger123/" target="_blank" class="footer-social-link"><img src="images/Instagram.svg" alt="Instagram">Frogstagram</a>
+        <a href="https://tiktok.com/froggy.froger" target="_blank" class="footer-social-link"><img src="images/Tiktok.svg" alt="TikTok">FrogTok</a>
+      </span>
+    </p>
   </div>
 
+  <div class="modal-overlay" id="achModal">
+    <div class="modal-sheet">
+      <div class="modal-handle"></div>
+      <div class="modal-title">🏆 Achievements</div>
+      <div class="achievement-list" id="achList"></div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    // ================================================================
+    // STORAGE HELPERS
+    // ================================================================
+    function lsGet(key, fallback) {
+      try { const v = localStorage.getItem(key); return v !== null ? JSON.parse(v) : fallback; }
+      catch(e) { return fallback; }
+    }
+    function lsSet(key, val) {
+      try { localStorage.setItem(key, JSON.stringify(val)); } catch(e) {}
+    }
+
+    // ================================================================
+    // SOUND ENGINE
+    // ================================================================
+    let audioCtx = null;
+    let muted = lsGet('fw_muted', false);
+
+    function getCtx() {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      return audioCtx;
+    }
+
+    function playTap() {
+      if (muted) return;
+      try {
+        const ctx = getCtx();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain); gain.connect(ctx.destination);
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(520, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(340, ctx.currentTime + 0.08);
+        gain.gain.setValueAtTime(0.18, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.12);
+        osc.start(ctx.currentTime);
+        osc.stop(ctx.currentTime + 0.13);
+      } catch(e) {}
+    }
+
+    function playPop() {
+      if (muted) return;
+      try {
+        const ctx = getCtx();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain); gain.connect(ctx.destination);
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(800, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(200, ctx.currentTime + 0.06);
+        gain.gain.setValueAtTime(0.12, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.09);
+        osc.start(ctx.currentTime);
+        osc.stop(ctx.currentTime + 0.1);
+      } catch(e) {}
+    }
+
+    function playStar() {
+      if (muted) return;
+      try {
+        const ctx = getCtx();
+        [0, 0.06, 0.12].forEach((t, i) => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.connect(gain); gain.connect(ctx.destination);
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime([600, 750, 900][i], ctx.currentTime + t);
+          gain.gain.setValueAtTime(0.12, ctx.currentTime + t);
+          gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + t + 0.1);
+          osc.start(ctx.currentTime + t);
+          osc.stop(ctx.currentTime + t + 0.12);
+        });
+      } catch(e) {}
+    }
+
+    const muteBtn = document.getElementById('muteBtn');
+    function applyMute() {
+      muteBtn.textContent = muted ? '🔇' : '🔊';
+      muteBtn.classList.toggle('muted', muted);
+    }
+    applyMute();
+    muteBtn.addEventListener('click', function() {
+      muted = !muted;
+      lsSet('fw_muted', muted);
+      applyMute();
+      playPop();
+    });
+
+    // ================================================================
+    // DARK MODE
+    // ================================================================
+    let dark = lsGet('fw_dark', false);
+    const darkBtn = document.getElementById('darkBtn');
+
+    function applyDark() {
+      document.body.classList.toggle('dark', dark);
+      darkBtn.textContent = dark ? '☀️' : '🌙';
+    }
+    applyDark();
+
+    darkBtn.addEventListener('click', function() {
+      dark = !dark;
+      lsSet('fw_dark', dark);
+      applyDark();
+      playPop();
+    });
+
+    // ================================================================
+    // TOAST
+    // ================================================================
+    let toastTimer = null;
+    function showToast(msg) {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.classList.add('show');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => t.classList.remove('show'), 2600);
+    }
+
+    // ================================================================
+    // GAME STATS
+    // ================================================================
+    const STATS_KEY = 'fw_stats_v1';
+    function getStats() { return lsGet(STATS_KEY, {}); }
+
+    function recordPlay(title) {
+      const stats = getStats();
+      if (!stats[title]) stats[title] = { plays: 0, lastPlayed: null };
+      stats[title].plays++;
+      stats[title].lastPlayed = Date.now();
+      lsSet(STATS_KEY, stats);
+      return stats[title].plays;
+    }
+
+    function renderStats() {
+      const stats = getStats();
+      document.querySelectorAll('.game-card').forEach(card => {
+        const title = card.querySelector('.game-title').textContent.trim();
+        const el = card.querySelector('.game-stats');
+        if (!el) return;
+        const s = stats[title];
+        if (s && s.plays > 0) {
+          el.textContent = `Played ${s.plays} time${s.plays !== 1 ? 's' : ''}`;
+        } else {
+          el.textContent = '';
+        }
+      });
+    }
+
+    // ================================================================
+    // FAVORITES
+    // ================================================================
+    const FAV_KEY = 'fw_favs_v1';
+    function getFavs() { return lsGet(FAV_KEY, []); }
+
+    function toggleFav(title, btn) {
+      let favs = getFavs();
+      const idx = favs.indexOf(title);
+      if (idx === -1) {
+        favs.push(title);
+        btn.textContent = '★';
+        btn.classList.add('fav');
+        playStar();
+        showToast('⭐ Added to Favorites!');
+      } else {
+        favs.splice(idx, 1);
+        btn.textContent = '☆';
+        btn.classList.remove('fav');
+        playPop();
+        showToast('Removed from Favorites');
+      }
+      lsSet(FAV_KEY, favs);
+      renderFavs();
+    }
+
+    function applyFavStars() {
+      const favs = getFavs();
+      document.querySelectorAll('.star-btn').forEach(btn => {
+        const title = btn.dataset.game;
+        const isFav = favs.includes(title);
+        btn.textContent = isFav ? '★' : '☆';
+        btn.classList.toggle('fav', isFav);
+      });
+    }
+
+    function renderFavs() {
+      const favs = getFavs();
+      const section = document.getElementById('favSection');
+      const strip = document.getElementById('favStrip');
+      if (!favs.length) { section.style.display = 'none'; return; }
+      section.style.display = 'block';
+      const cards = Array.from(document.querySelectorAll('.game-card'));
+      strip.innerHTML = favs.map(title => {
+        const card = cards.find(c => c.querySelector('.game-title').textContent.trim() === title);
+        if (!card) return '';
+        const img = card.querySelector('.card-thumb img');
+        const href = card.getAttribute('href');
+        const src = img ? img.getAttribute('src') : '';
+        return `<a href="${href}" class="recent-chip">
+          <div class="recent-chip-thumb">
+            ${src ? `<img src="${src}" alt="${title}">` : '<span style="font-size:1.4rem;line-height:44px;text-align:center;display:block">⭐</span>'}
+          </div>
+          <span class="recent-chip-name">${title}</span>
+        </a>`;
+      }).join('');
+    }
+
+    document.querySelectorAll('.star-btn').forEach(btn => {
+      btn.addEventListener('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        const title = this.dataset.game;
+        toggleFav(title, this);
+      });
+    });
+
+    applyFavStars();
+    renderFavs();
+
+    // ================================================================
+    // RECENTLY PLAYED
+    // ================================================================
+    const RECENT_KEY = 'fw_recent_v1';
+    const MAX_RECENT = 6;
+
+    function getRecent() { return lsGet(RECENT_KEY, []); }
+    function saveRecent(list) { lsSet(RECENT_KEY, list); }
+
+    function renderRecent() {
+      const recent  = getRecent();
+      const section = document.getElementById('recentSection');
+      const strip   = document.getElementById('recentStrip');
+      if (!recent.length) { section.style.display = 'none'; return; }
+      section.style.display = 'block';
+      strip.innerHTML = recent.map(g => `
+        <a href="${g.href}" class="recent-chip">
+          <div class="recent-chip-thumb">
+            ${g.src ? `<img src="${g.src}" alt="${g.title}">` : '<span style="font-size:1.4rem;line-height:44px;text-align:center;display:block">🐸</span>'}
+          </div>
+          <span class="recent-chip-name">${g.title}</span>
+        </a>
+      `).join('');
+    }
+
+    renderRecent();
+
+    // ================================================================
+    // ACHIEVEMENTS
+    // ================================================================
+    const ACH_KEY = 'fw_ach_v1';
+    const TOTAL_GAMES = 21;
+
+    const ACHIEVEMENTS = [
+      { id: 'play1',   icon: '🐸', name: 'First Hop',       desc: 'Play your first game',             check: (s, u) => u >= 1 },
+      { id: 'play5',   icon: '🎮', name: 'Pond Explorer',   desc: 'Play 5 different games',           check: (s, u) => u >= 5 },
+      { id: 'play10',  icon: '🔥', name: 'Frog Fanatic',    desc: 'Play 10 different games',          check: (s, u) => u >= 10 },
+      { id: 'playall', icon: '👑', name: 'Frog World King', desc: `Try all ${TOTAL_GAMES} games`,     check: (s, u) => u >= TOTAL_GAMES },
+      { id: 'fav1',    icon: '⭐', name: 'Stargazer',       desc: 'Add a game to favorites',          check: (s, u, f) => f >= 1 },
+      { id: 'plays50', icon: '🏆', name: 'Centurion',       desc: 'Accumulate 50 total plays',        check: (s) => Object.values(s).reduce((a, v) => a + v.plays, 0) >= 50 },
+    ];
+
+    function getUnlocked() { return lsGet(ACH_KEY, []); }
+
+    function checkAchievements(stats) {
+      const unlocked = getUnlocked();
+      const uniquePlayed = Object.keys(stats).filter(k => stats[k].plays > 0).length;
+      const favCount = getFavs().length;
+      const newlyUnlocked = [];
+
+      ACHIEVEMENTS.forEach(ach => {
+        if (!unlocked.includes(ach.id) && ach.check(stats, uniquePlayed, favCount)) {
+          unlocked.push(ach.id);
+          newlyUnlocked.push(ach);
+        }
+      });
+
+      if (newlyUnlocked.length) {
+        lsSet(ACH_KEY, unlocked);
+        newlyUnlocked.forEach(a => {
+          setTimeout(() => showToast(`🏆 Achievement: ${a.name}!`), 300);
+          playStar();
+        });
+      }
+    }
+
+    function renderAchModal() {
+      const unlocked = getUnlocked();
+      const list = document.getElementById('achList');
+      list.innerHTML = ACHIEVEMENTS.map(a => {
+        const done = unlocked.includes(a.id);
+        return `<div class="achievement-item ${done ? '' : 'locked'}">
+          <span class="achievement-icon">${a.icon}</span>
+          <div class="achievement-info">
+            <div class="achievement-name">${a.name}</div>
+            <div class="achievement-desc">${a.desc}</div>
+          </div>
+          <span class="achievement-check">${done ? '✅' : '🔒'}</span>
+        </div>`;
+      }).join('');
+    }
+
+    const achModal = document.getElementById('achModal');
+    document.getElementById('achBtn').addEventListener('click', function() {
+      renderAchModal();
+      achModal.classList.add('open');
+      playPop();
+    });
+    achModal.addEventListener('click', function(e) {
+      if (e.target === achModal) { achModal.classList.remove('open'); playPop(); }
+    });
+
+    // ================================================================
+    // CARD CLICK TRACKING
+    // ================================================================
+    document.querySelectorAll('.game-card').forEach(card => {
+      card.addEventListener('click', function(e) {
+        if (e.target.classList.contains('star-btn')) return;
+        playTap();
+
+        const title = this.querySelector('.game-title').textContent.trim();
+        const href  = this.getAttribute('href');
+        const img   = this.querySelector('.card-thumb img');
+        const src   = img ? img.getAttribute('src') : '';
+
+        recordPlay(title);
+        renderStats();
+
+        let recent = getRecent().filter(g => g.href !== href);
+        recent.unshift({ title, href, src });
+        if (recent.length > MAX_RECENT) recent = recent.slice(0, MAX_RECENT);
+        saveRecent(recent);
+        renderRecent();
+
+        checkAchievements(getStats());
+      });
+    });
+
+    renderStats();
+
+    // ================================================================
+    // SEARCH
+    // ================================================================
+    const searchInput = document.getElementById('searchInput');
+    const cards = document.querySelectorAll('.game-card');
+    const searchEmpty = document.getElementById('searchEmpty');
+
+    function runSearch() {
+      const q = searchInput.value.trim().toLowerCase();
+      let visible = 0;
+      cards.forEach(card => {
+        const title = card.querySelector('.game-title').textContent.toLowerCase();
+        const desc  = card.querySelector('.game-desc').textContent.toLowerCase();
+        const match = !q || title.includes(q) || desc.includes(q);
+        card.classList.toggle('hidden', !match);
+        if (match) visible++;
+      });
+      searchEmpty.style.display = visible === 0 ? 'block' : 'none';
+    }
+
+    ['input', 'keyup', 'keydown', 'compositionend', 'change'].forEach(evt => {
+      searchInput.addEventListener(evt, runSearch);
+    });
+
+    var _lastVal = '';
+    setInterval(function() {
+      if (searchInput.value !== _lastVal) { _lastVal = searchInput.value; runSearch(); }
+    }, 100);
+
+    // ================================================================
+    // FILTER / SORT  — fixed bubble bug
+    // ================================================================
+    const filterBtn = document.getElementById('filterBtn');
+    const sortDropdown = document.getElementById('sortDropdown');
+    let currentSort = 'default';
+    let skipClose = false;
+
+    filterBtn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      skipClose = true;
+      sortDropdown.classList.toggle('open');
+      playPop();
+      setTimeout(() => { skipClose = false; }, 10);
+    });
+
+    document.addEventListener('click', function() {
+      if (skipClose) return;
+      sortDropdown.classList.remove('open');
+    });
+
+    function sortCards(mode) {
+      const grid = document.getElementById('gamesGrid');
+      const cardArr = Array.from(grid.querySelectorAll('.game-card'));
+      const stats = getStats();
+
+      cardArr.sort((a, b) => {
+        if (mode === 'az') {
+          return a.querySelector('.game-title').textContent.localeCompare(b.querySelector('.game-title').textContent);
+        }
+        if (mode === 'mostplayed') {
+          const pa = (stats[a.querySelector('.game-title').textContent.trim()] || {plays:0}).plays;
+          const pb = (stats[b.querySelector('.game-title').textContent.trim()] || {plays:0}).plays;
+          return pb - pa;
+        }
+        if (mode === 'recent') {
+          return parseInt(b.dataset.order) - parseInt(a.dataset.order);
+        }
+        return parseInt(a.dataset.order) - parseInt(b.dataset.order);
+      });
+
+      const emptyEl = document.getElementById('searchEmpty');
+      cardArr.forEach(c => grid.insertBefore(c, emptyEl));
+    }
+
+    document.querySelectorAll('.sort-option').forEach(opt => {
+      opt.addEventListener('click', function(e) {
+        e.stopPropagation();
+        skipClose = true;
+        currentSort = this.dataset.sort;
+        document.querySelectorAll('.sort-option').forEach(o => o.classList.remove('active'));
+        this.classList.add('active');
+        sortDropdown.classList.remove('open');
+        sortCards(currentSort);
+        playPop();
+        setTimeout(() => { skipClose = false; }, 10);
+      });
+    });
+
+  </script>
 </body>
 </html>

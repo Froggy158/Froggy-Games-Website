@@ -1,0 +1,1263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FROG PAC</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+  *, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0; padding: 0;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+  }
+
+  body {
+    background: #000a03;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    font-family: 'Press Start 2P', monospace;
+    overflow: hidden;
+    cursor: default;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,40,10,0.15) 2px, rgba(0,40,10,0.15) 4px),
+      repeating-linear-gradient(90deg, transparent, transparent 2px, rgba(0,40,10,0.08) 2px, rgba(0,40,10,0.08) 4px);
+    pointer-events: none;
+    z-index: 10;
+  }
+
+  #gameWrapper {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+  }
+
+  #hud {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    padding: 4px 2px;
+    color: #39ff14;
+    font-size: 7px;
+    text-shadow: 0 0 8px #39ff14, 0 0 16px #39ff1466;
+    letter-spacing: 1px;
+  }
+
+  #canvas {
+    display: block;
+    image-rendering: pixelated;
+    box-shadow:
+      0 0 0 2px #1a5c1a,
+      0 0 0 4px #000,
+      0 0 30px #0f4a0f,
+      0 0 60px #0a2a0a;
+  }
+
+  #livesDisplay {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+  }
+
+  .life-icon {
+    font-size: 10px;
+  }
+
+  /* ---- HOME BUTTON ---- */
+  .btn-home {
+    position: fixed;
+    top: 10px;
+    left: 10px;
+    z-index: 100;
+    background: #0d3b0d;
+    color: #39ff14;
+    border: 2px solid #39ff14;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 7px;
+    padding: 6px 10px;
+    cursor: pointer;
+    box-shadow: 0 0 8px #39ff1466;
+    text-shadow: 0 0 6px #39ff14;
+    transition: background 0.15s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .btn-home:hover, .btn-home:active {
+    background: #1a6b1a;
+  }
+
+  /* ---- MOBILE D-PAD ---- */
+  #dpad {
+    display: none;
+    position: relative;
+    width: 150px;
+    height: 150px;
+    margin-top: 10px;
+    flex-shrink: 0;
+  }
+
+  .dpad-btn {
+    position: absolute;
+    width: 46px;
+    height: 46px;
+    background: #0d3b0d;
+    border: 2px solid #39ff14;
+    border-radius: 6px;
+    color: #39ff14;
+    font-size: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 0 8px #39ff1444;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: manipulation;
+    transition: background 0.08s, box-shadow 0.08s;
+  }
+  .dpad-btn:active {
+    background: #1a6b1a;
+    box-shadow: 0 0 16px #39ff1488;
+  }
+
+  /* Cross layout: up top-center, left mid-left, right mid-right, down bottom-center */
+  #btn-up    { top: 0;   left: 52px; }
+  #btn-left  { top: 52px; left: 0;  }
+  #btn-right { top: 52px; left: 104px; }
+  #btn-down  { top: 104px; left: 52px; }
+
+  /* Show d-pad on touch devices */
+  @media (pointer: coarse) {
+    #dpad { display: flex; }
+  }
+
+  img { pointer-events: none; user-drag: none; }
+</style>
+</head>
+<body>
+
+<button class="btn-home" onclick="window.location.href='../index.html'">🏠 Home</button>
+
+<div id="gameWrapper">
+  <div id="hud">
+    <div>SCORE: <span id="scoreVal">0</span></div>
+    <div>LEVEL: <span id="levelVal">1</span></div>
+    <div>HI: <span id="hiVal">0</span></div>
+    <div id="livesDisplay"></div>
+  </div>
+  <canvas id="canvas"></canvas>
+
+  <!-- Mobile D-Pad -->
+  <div id="dpad">
+    <div class="dpad-btn" id="btn-up">▲</div>
+    <div class="dpad-btn" id="btn-left">◀</div>
+    <div class="dpad-btn" id="btn-right">▶</div>
+    <div class="dpad-btn" id="btn-down">▼</div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+//  FROG PAC — single-file retro arcade game
+//  Sections: Config → Audio → Map → Player → Enemies → Render → Game Loop
+// ============================================================
+
+// ---- CONFIG ------------------------------------------------
+const TILE  = 20;           // px per grid tile
+const COLS  = 21;
+const ROWS  = 21;
+const W     = COLS * TILE;
+const H     = ROWS * TILE;
+
+const canvas = document.getElementById('canvas');
+const ctx    = canvas.getContext('2d');
+canvas.width  = W;
+canvas.height = H;
+
+// Responsive scaling — reserve room for HUD (50px) + d-pad (170px on touch)
+function scaleCanvas() {
+  const isTouchDevice = window.matchMedia('(pointer: coarse)').matches;
+  const reservedH = isTouchDevice ? 230 : 60;
+  const maxW = window.innerWidth  - 20;
+  const maxH = window.innerHeight - reservedH;
+  const scale = Math.min(maxW / W, maxH / H, 2);
+  canvas.style.width  = (W * scale) + 'px';
+  canvas.style.height = (H * scale) + 'px';
+}
+scaleCanvas();
+window.addEventListener('resize', scaleCanvas);
+
+// Disable context menu
+document.addEventListener('contextmenu', e => e.preventDefault());
+
+// ---- COLORS ------------------------------------------------
+const C = {
+  bg:      '#020d04',
+  wall:    '#0d3b0d',
+  wallHL:  '#1a6b1a',
+  path:    '#010801',
+  fly:     '#88ff44',
+  flyGlow: '#aaff66',
+  fire:    '#ffee00',
+  fireGlow:'#ffaa00',
+  frog:    '#22cc44',
+  frogDk:  '#117722',
+  frogEye: '#ffffff',
+  frogPup: '#000000',
+  tongue:  '#ff4466',
+  scared:  '#4488ff',
+  scaredD: '#224488',
+  snake:   '#cc4400',
+  bird:    '#ddaa00',
+  spider:  '#9933cc',
+  text:    '#39ff14',
+  textDim: '#1a8a09',
+  red:     '#ff3333',
+  orange:  '#ff8800',
+  white:   '#ffffff',
+};
+
+// ---- AUDIO (Web Audio API retro sounds) --------------------
+let audioCtx = null;
+
+function getAudio() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  return audioCtx;
+}
+
+function playTone(freq, type, duration, vol = 0.3, startFreq = null) {
+  try {
+    const ac = getAudio();
+    const osc = ac.createOscillator();
+    const gain = ac.createGain();
+    osc.connect(gain);
+    gain.connect(ac.destination);
+    osc.type = type;
+    osc.frequency.setValueAtTime(startFreq || freq, ac.currentTime);
+    if (startFreq) osc.frequency.linearRampToValueAtTime(freq, ac.currentTime + duration);
+    gain.gain.setValueAtTime(vol, ac.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + duration);
+    osc.start(ac.currentTime);
+    osc.stop(ac.currentTime + duration);
+  } catch(e) {}
+}
+
+function sfxEatFly()   { playTone(880, 'square', 0.06, 0.2); }
+function sfxPowerUp()  { playTone(1200, 'sawtooth', 0.4, 0.25, 400); }
+function sfxEatEnemy() { playTone(300, 'square', 0.3, 0.3, 900); }
+function sfxDie()      {
+  playTone(440,'sawtooth',0.2,0.3);
+  setTimeout(()=>playTone(330,'sawtooth',0.2,0.3),200);
+  setTimeout(()=>playTone(220,'sawtooth',0.3,0.3),400);
+}
+function sfxLevelUp()  {
+  [523,659,784,1047].forEach((f,i)=>setTimeout(()=>playTone(f,'square',0.15,0.2),i*100));
+}
+function sfxMove()     { playTone(200,'square',0.04,0.05); }
+
+// ---- MAP TEMPLATE ------------------------------------------
+// 0=path, 1=wall, 2=fly, 3=firefly(power pellet), 4=empty(no dot)
+const MAP_TEMPLATE = [
+  [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+  [1,2,2,2,2,2,2,2,2,2,1,2,2,2,2,2,2,2,2,2,1],
+  [1,3,1,1,2,1,1,1,2,1,1,1,2,1,1,1,2,1,1,3,1],
+  [1,2,1,1,2,1,1,1,2,1,1,1,2,1,1,1,2,1,1,2,1],
+  [1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,1],
+  [1,2,1,1,2,1,2,1,1,1,1,1,1,1,2,1,2,1,1,2,1],
+  [1,2,2,2,2,1,2,2,2,2,1,2,2,2,2,1,2,2,2,2,1],
+  [1,1,1,1,2,1,1,1,4,4,4,4,4,1,1,1,2,1,1,1,1],
+  [1,1,1,1,2,1,4,4,4,1,1,1,4,4,4,1,2,1,1,1,1],
+  [1,1,1,1,2,1,4,1,1,4,4,4,1,1,4,1,2,1,1,1,1],
+  [4,4,4,4,2,4,4,1,4,4,4,4,4,1,4,4,2,4,4,4,4],
+  [1,1,1,1,2,1,4,1,1,1,1,1,1,1,4,1,2,1,1,1,1],
+  [1,1,1,1,2,1,4,4,4,4,4,4,4,4,4,1,2,1,1,1,1],
+  [1,1,1,1,2,1,4,1,1,1,1,1,1,1,4,1,2,1,1,1,1],
+  [1,2,2,2,2,2,2,2,2,2,1,2,2,2,2,2,2,2,2,2,1],
+  [1,2,1,1,2,1,1,1,2,1,1,1,2,1,1,1,2,1,1,2,1],
+  [1,3,2,1,2,2,2,2,2,2,4,2,2,2,2,2,2,1,2,3,1],
+  [1,1,2,1,2,1,2,1,1,1,1,1,1,1,2,1,2,1,2,1,1],
+  [1,2,2,2,2,1,2,2,2,2,1,2,2,2,2,1,2,2,2,2,1],
+  [1,2,1,1,1,1,1,1,2,1,1,1,2,1,1,1,1,1,1,2,1],
+  [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+];
+
+// ---- GAME STATE --------------------------------------------
+let map = [];
+let dots = [];       // fly positions
+let pellets = [];    // firefly positions
+let score = 0;
+let hiScore = parseInt(localStorage.getItem('frogpac_hi') || '0');
+let lives = 3;
+let level = 1;
+let gameState = 'start'; // start | playing | paused | dying | levelup | gameover
+let powerMode = false;
+let powerTimer = 0;
+const POWER_DURATION = 420; // frames ~7s at 60fps
+
+// Screen shake
+let shakeX = 0, shakeY = 0, shakeDur = 0;
+function triggerShake(mag = 5, dur = 18) {
+  shakeX = (Math.random()-0.5)*mag*2;
+  shakeY = (Math.random()-0.5)*mag*2;
+  shakeDur = dur;
+}
+
+// ---- PLAYER ------------------------------------------------
+const player = {
+  col: 10, row: 16,      // grid position
+  x: 0, y: 0,            // pixel position (interpolated)
+  dx: 0, dy: 0,          // movement direction
+  nextDx: 0, nextDy: 0,  // queued direction
+  moving: false,
+  moveProgress: 0,
+  fromCol: 10, fromRow: 16,
+  mouthAngle: 0,
+  mouthDir: 1,
+  tongueOut: false,
+  tongueTimer: 0,
+  dead: false,
+  deathTimer: 0,
+};
+
+function resetPlayer() {
+  player.col = 10; player.row = 16;
+  player.fromCol = 10; player.fromRow = 16;
+  player.x = player.col * TILE + TILE/2;
+  player.y = player.row * TILE + TILE/2;
+  player.dx = 0; player.dy = 0;
+  player.nextDx = 0; player.nextDy = 0;
+  player.moving = false;
+  player.moveProgress = 0;
+  player.mouthAngle = 0;
+  player.tongueOut = false;
+  player.dead = false;
+  player.deathTimer = 0;
+}
+
+// ---- ENEMIES -----------------------------------------------
+// Types: snake (0), bird (1), spider (2)
+const ENEMY_TYPES = ['snake','bird','spider'];
+const ENEMY_COLORS = [C.snake, C.bird, C.spider];
+const ENEMY_START = [
+  {col:9,  row:9,  type:0},
+  {col:10, row:9,  type:1},
+  {col:11, row:9,  type:2},
+  {col:10, row:11, type:0},
+];
+
+let enemies = [];
+
+function createEnemy(cfg, idx) {
+  return {
+    col: cfg.col, row: cfg.row,
+    fromCol: cfg.col, fromRow: cfg.row,
+    x: cfg.col*TILE+TILE/2, y: cfg.row*TILE+TILE/2,
+    type: cfg.type,
+    dx: 0, dy: 0,
+    moving: false,
+    moveProgress: 0,
+    scared: false,
+    scaredBlink: false,
+    eaten: false,
+    moveTimer: 0,
+    moveDelay: 8 + idx*3,   // stagger starts
+    animFrame: 0,
+    animTimer: 0,
+    dir: Math.floor(Math.random()*4),
+  };
+}
+
+function resetEnemies() {
+  enemies = ENEMY_START.map((cfg,i) => createEnemy(cfg,i));
+}
+
+// ---- MAP INIT ----------------------------------------------
+function initMap() {
+  map = MAP_TEMPLATE.map(row => [...row]);
+  dots = [];
+  pellets = [];
+  for (let r=0; r<ROWS; r++) {
+    for (let c=0; c<COLS; c++) {
+      if (map[r][c] === 2) dots.push({col:c, row:r});
+      if (map[r][c] === 3) pellets.push({col:c, row:r});
+    }
+  }
+}
+
+function isWall(col, row) {
+  if (col < 0 || col >= COLS || row < 0 || row >= ROWS) return true;
+  return map[row][col] === 1;
+}
+
+// ---- INPUT -------------------------------------------------
+const keys = {};
+document.addEventListener('keydown', e => {
+  keys[e.key] = true;
+
+  if (gameState === 'start' && e.key === 'Enter') startGame();
+  if (gameState === 'gameover' && e.key === 'Enter') startGame();
+  if (gameState === 'playing') {
+    if (e.key === 'p' || e.key === 'P') { gameState = 'paused'; }
+    const dirs = {
+      'ArrowUp':[-0,1,0,-1],'ArrowDown':[0,1,0,1],
+      'ArrowLeft':[-1,0,-1,0],'ArrowRight':[1,0,1,0],
+      'w':[-0,1,0,-1],'s':[0,1,0,1],'a':[-1,0,-1,0],'d':[1,0,1,0],
+      'W':[-0,1,0,-1],'S':[0,1,0,1],'A':[-1,0,-1,0],'D':[1,0,1,0],
+    };
+    const d = dirs[e.key];
+    if (d) {
+      if (e.key.includes('Arrow') || ['w','a','s','d','W','A','S','D'].includes(e.key)) {
+        e.preventDefault();
+      }
+      const dx = e.key==='ArrowLeft'||e.key==='a'||e.key==='A'?-1:e.key==='ArrowRight'||e.key==='d'||e.key==='D'?1:0;
+      const dy = e.key==='ArrowUp'||e.key==='w'||e.key==='W'?-1:e.key==='ArrowDown'||e.key==='s'||e.key==='S'?1:0;
+      player.nextDx = dx; player.nextDy = dy;
+    }
+  }
+  if (gameState === 'paused' && (e.key === 'p' || e.key === 'P')) { gameState = 'playing'; }
+});
+
+// ---- GAME INIT ---------------------------------------------
+function startGame() {
+  score = 0;
+  lives = 3;
+  level = 1;
+  initMap();
+  resetPlayer();
+  resetEnemies();
+  powerMode = false;
+  powerTimer = 0;
+  gameState = 'playing';
+  updateHUD();
+}
+
+function updateHUD() {
+  document.getElementById('scoreVal').textContent = score;
+  document.getElementById('levelVal').textContent = level;
+  document.getElementById('hiVal').textContent    = hiScore;
+  const ld = document.getElementById('livesDisplay');
+  ld.innerHTML = '';
+  for (let i=0; i<lives; i++) {
+    const s = document.createElement('span');
+    s.className = 'life-icon';
+    s.textContent = '🐸';
+    ld.appendChild(s);
+  }
+}
+
+// ---- PLAYER UPDATE -----------------------------------------
+const MOVE_SPEED = 0.18; // fraction per frame
+
+function updatePlayer() {
+  if (player.dead) {
+    player.deathTimer++;
+    if (player.deathTimer > 80) {
+      lives--;
+      updateHUD();
+      if (lives <= 0) {
+        gameState = 'gameover';
+        if (score > hiScore) { hiScore = score; localStorage.setItem('frogpac_hi', hiScore); }
+      } else {
+        resetPlayer();
+        resetEnemies();
+        powerMode = false;
+        powerTimer = 0;
+      }
+    }
+    return;
+  }
+
+  // Mouth animation
+  player.mouthAngle += 0.15 * player.mouthDir;
+  if (player.mouthAngle > 0.4) player.mouthDir = -1;
+  if (player.mouthAngle < 0.0) { player.mouthDir = 1; player.mouthAngle = 0; }
+
+  // Tongue
+  if (player.tongueOut) {
+    player.tongueTimer--;
+    if (player.tongueTimer <= 0) player.tongueOut = false;
+  }
+
+  if (player.moving) {
+    player.moveProgress += MOVE_SPEED;
+    if (player.moveProgress >= 1) {
+      player.moveProgress = 1;
+      player.col = player.fromCol + player.dx;
+      player.row = player.fromRow + player.dy;
+      player.x = player.col * TILE + TILE/2;
+      player.y = player.row * TILE + TILE/2;
+      player.moving = false;
+
+      // Eat flies
+      const fi = dots.findIndex(d => d.col===player.col && d.row===player.row);
+      if (fi !== -1) {
+        dots.splice(fi,1);
+        map[player.row][player.col] = 0;
+        score += 10;
+        updateHUD();
+        sfxEatFly();
+        player.tongueOut = true;
+        player.tongueTimer = 8;
+        if (dots.length === 0 && pellets.length === 0) levelUp();
+      }
+
+      // Eat firefly (power pellet)
+      const pi = pellets.findIndex(p => p.col===player.col && p.row===player.row);
+      if (pi !== -1) {
+        pellets.splice(pi,1);
+        map[player.row][player.col] = 0;
+        score += 50;
+        updateHUD();
+        sfxPowerUp();
+        powerMode = true;
+        powerTimer = POWER_DURATION;
+        enemies.forEach(e => { if (!e.eaten) { e.scared = true; e.scaredBlink = false; }});
+        if (dots.length === 0 && pellets.length === 0) levelUp();
+      }
+
+      // Try queued direction
+      if (!isWall(player.col+player.nextDx, player.row+player.nextDy) && (player.nextDx!==0||player.nextDy!==0)) {
+        player.dx = player.nextDx; player.dy = player.nextDy;
+      }
+      // Continue in current direction
+      if (!isWall(player.col+player.dx, player.row+player.dy) && (player.dx!==0||player.dy!==0)) {
+        player.fromCol = player.col; player.fromRow = player.row;
+        player.moving = true;
+        player.moveProgress = 0;
+      }
+    }
+  } else {
+    // Try queued first, then current
+    let ndx = player.nextDx, ndy = player.nextDy;
+    if ((ndx!==0||ndy!==0) && !isWall(player.col+ndx, player.row+ndy)) {
+      player.dx = ndx; player.dy = ndy;
+    }
+    if ((player.dx!==0||player.dy!==0) && !isWall(player.col+player.dx, player.row+player.dy)) {
+      player.fromCol = player.col; player.fromRow = player.row;
+      player.moving = true;
+      player.moveProgress = 0;
+    }
+  }
+
+  // Interpolated position
+  if (player.moving) {
+    const ease = player.moveProgress < 0.5 ? 2*player.moveProgress*player.moveProgress : -1+(4-2*player.moveProgress)*player.moveProgress;
+    player.x = (player.fromCol + player.dx * ease) * TILE + TILE/2;
+    player.y = (player.fromRow + player.dy * ease) * TILE + TILE/2;
+  }
+}
+
+// ---- POWER MODE --------------------------------------------
+function updatePower() {
+  if (!powerMode) return;
+  powerTimer--;
+  if (powerTimer <= 60) {
+    // Blink warning
+    enemies.forEach(e => { if (e.scared) e.scaredBlink = Math.floor(powerTimer/6)%2===0; });
+  }
+  if (powerTimer <= 0) {
+    powerMode = false;
+    enemies.forEach(e => { e.scared = false; e.scaredBlink = false; });
+  }
+}
+
+// ---- ENEMY UPDATE ------------------------------------------
+const DIRS = [{dx:0,dy:-1},{dx:1,dy:0},{dx:0,dy:1},{dx:-1,dy:0}];
+
+function getEnemySpeed(e) {
+  // Base speed varies by type + increases each level
+  const base = e.type===1 ? 0.14 : e.type===2 ? 0.10 : 0.12;
+  return Math.min(base + (level-1)*0.012, 0.22) * (e.scared ? 0.55 : 1);
+}
+
+function chooseEnemyDir(e) {
+  const px = player.col, py = player.row;
+  const ec = e.col, er = e.row;
+
+  // Available directions (not walls, not reversing)
+  const rev = {dx:-e.dx, dy:-e.dy};
+  const avail = DIRS.filter(d => !isWall(ec+d.dx, er+d.dy));
+  const nonRev = avail.filter(d => !(d.dx===rev.dx && d.dy===rev.dy));
+  const pool = nonRev.length > 0 ? nonRev : avail;
+  if (pool.length === 0) return {dx:0, dy:0};
+
+  if (e.scared) {
+    // Flee — pick direction furthest from player
+    return pool.reduce((best, d) => {
+      const nc = ec+d.dx, nr = er+d.dy;
+      const dist = Math.abs(nc-px)+Math.abs(nr-py);
+      const bd   = Math.abs(ec+best.dx-px)+Math.abs(er+best.dy-py);
+      return dist > bd ? d : best;
+    }, pool[0]);
+  }
+
+  // Chase behaviors by type
+  if (e.type === 0) {
+    // Snake: directly chase player
+    return pool.reduce((best, d) => {
+      const nc = ec+d.dx, nr = er+d.dy;
+      const dist = Math.abs(nc-px)+Math.abs(nr-py);
+      const bd   = Math.abs(ec+best.dx-px)+Math.abs(er+best.dy-py);
+      return dist < bd ? d : best;
+    }, pool[0]);
+  } else if (e.type === 1) {
+    // Bird: target 3 tiles ahead of player
+    const tx = px + player.dx*3, ty = py + player.dy*3;
+    return pool.reduce((best, d) => {
+      const nc = ec+d.dx, nr = er+d.dy;
+      return (Math.abs(nc-tx)+Math.abs(nr-ty)) < (Math.abs(ec+best.dx-tx)+Math.abs(er+best.dy-ty)) ? d : best;
+    }, pool[0]);
+  } else {
+    // Spider: random patrol, occasionally chases
+    if (Math.random() < 0.25) {
+      return pool.reduce((best, d) => {
+        const nc = ec+d.dx, nr = er+d.dy;
+        return (Math.abs(nc-px)+Math.abs(nr-py)) < (Math.abs(ec+best.dx-px)+Math.abs(er+best.dy-py)) ? d : best;
+      }, pool[0]);
+    }
+    return pool[Math.floor(Math.random()*pool.length)];
+  }
+}
+
+function updateEnemies() {
+  enemies.forEach((e, idx) => {
+    if (e.eaten) return;
+
+    e.animTimer++;
+    if (e.animTimer > 8) { e.animTimer = 0; e.animFrame = (e.animFrame+1)%4; }
+
+    if (e.moving) {
+      const speed = getEnemySpeed(e);
+      e.moveProgress += speed;
+      if (e.moveProgress >= 1) {
+        e.moveProgress = 1;
+        e.col = e.fromCol + e.dx;
+        e.row = e.fromRow + e.dy;
+        e.x = e.col*TILE+TILE/2;
+        e.y = e.row*TILE+TILE/2;
+        e.moving = false;
+        // Choose next dir
+        const d = chooseEnemyDir(e);
+        e.dx = d.dx; e.dy = d.dy;
+        if (!isWall(e.col+e.dx, e.row+e.dy)) {
+          e.fromCol = e.col; e.fromRow = e.row;
+          e.moving = true; e.moveProgress = 0;
+        }
+      }
+    } else {
+      e.moveTimer++;
+      if (e.moveTimer > e.moveDelay) {
+        e.moveTimer = 0;
+        const d = chooseEnemyDir(e);
+        e.dx = d.dx; e.dy = d.dy;
+        if (!isWall(e.col+e.dx, e.row+e.dy) && (e.dx!==0||e.dy!==0)) {
+          e.fromCol = e.col; e.fromRow = e.row;
+          e.moving = true; e.moveProgress = 0;
+        }
+      }
+    }
+
+    // Interpolate
+    if (e.moving) {
+      const t = e.moveProgress;
+      e.x = (e.fromCol + e.dx*t)*TILE+TILE/2;
+      e.y = (e.fromRow + e.dy*t)*TILE+TILE/2;
+    }
+
+    // Collision with player
+    if (!player.dead) {
+      const dist = Math.hypot(e.x - player.x, e.y - player.y);
+      if (dist < TILE*0.75) {
+        if (powerMode && e.scared) {
+          // Eat enemy
+          e.eaten = true;
+          score += 200;
+          updateHUD();
+          sfxEatEnemy();
+        } else if (!powerMode || !e.scared) {
+          // Player dies
+          player.dead = true;
+          player.deathTimer = 0;
+          sfxDie();
+          triggerShake(6, 25);
+        }
+      }
+    }
+  });
+}
+
+// ---- LEVEL UP -----------------------------------------------
+let levelUpTimer = 0;
+function levelUp() {
+  gameState = 'levelup';
+  levelUpTimer = 90;
+  sfxLevelUp();
+  level++;
+}
+
+// ---- RENDER ------------------------------------------------
+let frame = 0;
+
+function drawMap() {
+  for (let r=0; r<ROWS; r++) {
+    for (let c=0; c<COLS; c++) {
+      const x = c*TILE, y = r*TILE;
+      if (map[r][c]===1) {
+        // Wall
+        ctx.fillStyle = C.wall;
+        ctx.fillRect(x,y,TILE,TILE);
+        // Wall highlight (top/left edges)
+        ctx.fillStyle = C.wallHL;
+        ctx.fillRect(x,y,TILE,2);
+        ctx.fillRect(x,y,2,TILE);
+        // Inner glow dot
+        ctx.fillStyle = '#0a2a0a';
+        ctx.fillRect(x+4,y+4,TILE-8,TILE-8);
+      } else {
+        ctx.fillStyle = C.path;
+        ctx.fillRect(x,y,TILE,TILE);
+      }
+    }
+  }
+}
+
+function drawDots() {
+  dots.forEach(d => {
+    const x = d.col*TILE+TILE/2, y = d.row*TILE+TILE/2;
+    ctx.fillStyle = C.fly;
+    ctx.shadowColor = C.flyGlow;
+    ctx.shadowBlur = 4;
+    // Draw tiny fly
+    ctx.beginPath();
+    ctx.arc(x, y, 3, 0, Math.PI*2);
+    ctx.fill();
+    // Wings
+    ctx.fillStyle = 'rgba(180,255,100,0.4)';
+    ctx.beginPath();
+    ctx.ellipse(x-4, y-2, 3, 1.5, -0.5, 0, Math.PI*2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.ellipse(x+4, y-2, 3, 1.5, 0.5, 0, Math.PI*2);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+  });
+}
+
+function drawPellets() {
+  pellets.forEach(p => {
+    const x = p.col*TILE+TILE/2, y = p.row*TILE+TILE/2;
+    const pulse = Math.sin(frame*0.12)*2;
+    ctx.shadowColor = C.fireGlow;
+    ctx.shadowBlur = 10+pulse*3;
+    // Glowing firefly body
+    ctx.fillStyle = C.fire;
+    ctx.beginPath();
+    ctx.arc(x, y, 5+pulse*0.5, 0, Math.PI*2);
+    ctx.fill();
+    // Glow halo
+    const grad = ctx.createRadialGradient(x,y,2, x,y,10);
+    grad.addColorStop(0,'rgba(255,238,0,0.6)');
+    grad.addColorStop(1,'rgba(255,170,0,0)');
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.arc(x, y, 10, 0, Math.PI*2);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+  });
+}
+
+function drawFrog() {
+  const x = player.x, y = player.y;
+  const r = TILE/2 - 1;
+
+  if (player.dead) {
+    // Death spin
+    const t = player.deathTimer / 80;
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(t * Math.PI * 3);
+    ctx.globalAlpha = 1 - t*0.8;
+    ctx.scale(1-t*0.5, 1-t*0.5);
+
+    ctx.fillStyle = C.frog;
+    ctx.beginPath();
+    ctx.arc(0, 0, r, 0, Math.PI*2);
+    ctx.fill();
+    ctx.globalAlpha = 1;
+    ctx.restore();
+    return;
+  }
+
+  // Face direction
+  let angle = 0;
+  if (player.dx === 1)  angle = 0;
+  if (player.dx === -1) angle = Math.PI;
+  if (player.dy === 1)  angle = Math.PI/2;
+  if (player.dy === -1) angle = -Math.PI/2;
+  if (player.dx === 0 && player.dy === 0) angle = 0;
+
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(angle);
+
+  // Body
+  ctx.fillStyle = C.frog;
+  ctx.shadowColor = '#22ff44';
+  ctx.shadowBlur = 6;
+  ctx.beginPath();
+  ctx.arc(0, 0, r, 0, Math.PI*2);
+  ctx.fill();
+  ctx.shadowBlur = 0;
+
+  // Underbelly
+  ctx.fillStyle = C.frogDk;
+  ctx.beginPath();
+  ctx.ellipse(0, 2, r*0.6, r*0.5, 0, 0, Math.PI*2);
+  ctx.fill();
+
+  // Mouth (chomping)
+  const ma = player.mouthAngle;
+  ctx.fillStyle = C.bg;
+  ctx.beginPath();
+  ctx.moveTo(0, 0);
+  ctx.arc(0, 0, r-1, -ma, ma);
+  ctx.closePath();
+  ctx.fill();
+
+  // Tongue
+  if (player.tongueOut) {
+    ctx.strokeStyle = C.tongue;
+    ctx.lineWidth = 3;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(r-2, 0);
+    ctx.lineTo(r+6, 0);
+    ctx.stroke();
+    ctx.fillStyle = C.tongue;
+    ctx.beginPath();
+    ctx.arc(r+6, 0, 3, 0, Math.PI*2);
+    ctx.fill();
+  }
+
+  // Eyes
+  const eyePositions = [{x:-4,y:-r+4},{x:4,y:-r+4}];
+  eyePositions.forEach(ep => {
+    ctx.fillStyle = C.frogEye;
+    ctx.beginPath();
+    ctx.arc(ep.x, ep.y, 3.5, 0, Math.PI*2);
+    ctx.fill();
+    ctx.fillStyle = C.frogPup;
+    ctx.beginPath();
+    ctx.arc(ep.x+0.5, ep.y+0.5, 2, 0, Math.PI*2);
+    ctx.fill();
+  });
+
+  // Spots
+  ctx.fillStyle = 'rgba(0,0,0,0.25)';
+  ctx.beginPath();
+  ctx.arc(-3, 3, 2.5, 0, Math.PI*2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(4, 5, 2, 0, Math.PI*2);
+  ctx.fill();
+
+  ctx.restore();
+}
+
+function drawEnemies() {
+  enemies.forEach(e => {
+    if (e.eaten) return;
+    const x = e.x, y = e.y;
+    const r = TILE/2 - 2;
+    const bob = Math.sin(frame*0.15 + e.col) * 1.5;
+
+    ctx.save();
+    ctx.translate(x, y + bob);
+
+    let col1, col2;
+    if (e.scared) {
+      col1 = e.scaredBlink ? C.white : C.scared;
+      col2 = e.scaredBlink ? C.frogEye : C.scaredD;
+    } else {
+      col1 = ENEMY_COLORS[e.type];
+      col2 = '#000000';
+    }
+
+    if (e.type === 0) {
+      // Snake — elongated with zigzag
+      ctx.fillStyle = col1;
+      ctx.shadowColor = col1;
+      ctx.shadowBlur = 4;
+      ctx.beginPath();
+      ctx.ellipse(0, 0, r*1.1, r*0.7, 0, 0, Math.PI*2);
+      ctx.fill();
+      // Head
+      ctx.beginPath();
+      ctx.ellipse(r*0.6, 0, r*0.6, r*0.5, 0, 0, Math.PI*2);
+      ctx.fill();
+      ctx.shadowBlur = 0;
+      // Eyes
+      ctx.fillStyle = C.frogEye;
+      ctx.beginPath(); ctx.arc(r*0.9, -3, 2.5, 0, Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.arc(r*0.9, 3, 2.5, 0, Math.PI*2); ctx.fill();
+      ctx.fillStyle = col2;
+      ctx.beginPath(); ctx.arc(r*0.9+0.5, -3, 1.5, 0, Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.arc(r*0.9+0.5, 3, 1.5, 0, Math.PI*2); ctx.fill();
+      // Tongue
+      ctx.strokeStyle = C.tongue;
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(r*1.2, 0);
+      ctx.lineTo(r*1.5, -2);
+      ctx.moveTo(r*1.2, 0);
+      ctx.lineTo(r*1.5, 2);
+      ctx.stroke();
+
+    } else if (e.type === 1) {
+      // Bird — round body with wings
+      ctx.fillStyle = col1;
+      ctx.shadowColor = col1;
+      ctx.shadowBlur = 4;
+      // Wings flap with animFrame
+      const wingA = Math.sin(e.animFrame/4 * Math.PI) * 0.4;
+      ctx.save();
+      ctx.rotate(-wingA);
+      ctx.beginPath();
+      ctx.ellipse(-r*0.8, -r*0.2, r*0.9, r*0.4, 0.4, 0, Math.PI*2);
+      ctx.fill();
+      ctx.restore();
+      ctx.save();
+      ctx.rotate(wingA);
+      ctx.beginPath();
+      ctx.ellipse(r*0.8, -r*0.2, r*0.9, r*0.4, -0.4, 0, Math.PI*2);
+      ctx.fill();
+      ctx.restore();
+      // Body
+      ctx.beginPath();
+      ctx.arc(0, 0, r*0.75, 0, Math.PI*2);
+      ctx.fill();
+      ctx.shadowBlur = 0;
+      // Beak
+      ctx.fillStyle = C.orange;
+      ctx.beginPath();
+      ctx.moveTo(r*0.7, -2); ctx.lineTo(r*1.1, 0); ctx.lineTo(r*0.7, 2);
+      ctx.closePath(); ctx.fill();
+      // Eye
+      ctx.fillStyle = C.frogEye;
+      ctx.beginPath(); ctx.arc(r*0.4, -r*0.25, 3, 0, Math.PI*2); ctx.fill();
+      ctx.fillStyle = col2;
+      ctx.beginPath(); ctx.arc(r*0.5, -r*0.25, 1.8, 0, Math.PI*2); ctx.fill();
+
+    } else {
+      // Spider — round with legs
+      ctx.fillStyle = col1;
+      ctx.shadowColor = col1;
+      ctx.shadowBlur = 4;
+      // Legs
+      ctx.strokeStyle = col1;
+      ctx.lineWidth = 1.5;
+      for (let i=0; i<4; i++) {
+        const legAngle = (i/4)*Math.PI - Math.PI/2;
+        const wiggle = Math.sin(frame*0.2 + i) * 0.2;
+        ctx.save();
+        ctx.rotate(legAngle + wiggle);
+        ctx.beginPath();
+        ctx.moveTo(r*0.5, 0);
+        ctx.lineTo(r*1.2, r*0.4);
+        ctx.lineTo(r*1.6, r*0.1);
+        ctx.stroke();
+        ctx.restore();
+        ctx.save();
+        ctx.rotate(-legAngle - wiggle);
+        ctx.beginPath();
+        ctx.moveTo(r*0.5, 0);
+        ctx.lineTo(r*1.2, r*0.4);
+        ctx.lineTo(r*1.6, r*0.1);
+        ctx.stroke();
+        ctx.restore();
+      }
+      // Body
+      ctx.beginPath();
+      ctx.arc(0, 0, r*0.75, 0, Math.PI*2);
+      ctx.fill();
+      ctx.shadowBlur = 0;
+      // Abdomen
+      ctx.fillStyle = e.scared ? col2 : '#6600aa';
+      ctx.beginPath();
+      ctx.arc(0, r*0.3, r*0.5, 0, Math.PI*2);
+      ctx.fill();
+      // Eyes (4 small)
+      ctx.fillStyle = C.red;
+      [[-3,-3],[0,-4],[3,-3],[1.5,-1]].forEach(([ex,ey]) => {
+        ctx.beginPath(); ctx.arc(ex,ey,1.5,0,Math.PI*2); ctx.fill();
+      });
+    }
+
+    // "SCARED" indicator
+    if (e.scared && !e.scaredBlink) {
+      ctx.fillStyle = 'rgba(100,150,255,0.3)';
+      ctx.beginPath();
+      ctx.arc(0,0,r+2,0,Math.PI*2);
+      ctx.fill();
+    }
+
+    ctx.restore();
+  });
+}
+
+function drawPowerBar() {
+  if (!powerMode) return;
+  const barW = W - 40;
+  const t = powerTimer / POWER_DURATION;
+  ctx.fillStyle = 'rgba(0,0,0,0.5)';
+  ctx.fillRect(20, H - 8, barW, 5);
+  const col = t > 0.3 ? '#ffee00' : '#ff4444';
+  ctx.fillStyle = col;
+  ctx.shadowColor = col;
+  ctx.shadowBlur = 6;
+  ctx.fillRect(20, H - 8, barW * t, 5);
+  ctx.shadowBlur = 0;
+}
+
+// ---- OVERLAY SCREENS ---------------------------------------
+function drawStart() {
+  ctx.fillStyle = 'rgba(0,5,1,0.88)';
+  ctx.fillRect(0, 0, W, H);
+
+  // Title glow
+  ctx.shadowColor = '#39ff14';
+  ctx.shadowBlur = 20;
+  ctx.fillStyle = '#39ff14';
+  ctx.font = '20px "Press Start 2P"';
+  ctx.textAlign = 'center';
+  ctx.fillText('FROG PAC', W/2, H/2 - 60);
+  ctx.shadowBlur = 0;
+
+  // Frog face decoration
+  ctx.fillStyle = '#22cc44';
+  ctx.shadowColor = '#22cc44'; ctx.shadowBlur = 8;
+  ctx.beginPath(); ctx.arc(W/2, H/2 - 10, 28, 0, Math.PI*2); ctx.fill();
+  ctx.shadowBlur = 0;
+  ctx.fillStyle = '#000';
+  ctx.beginPath(); ctx.moveTo(W/2, H/2-10); ctx.arc(W/2, H/2-10, 27, -0.5, 0.5); ctx.closePath(); ctx.fill();
+  ctx.fillStyle = '#fff';
+  ctx.beginPath(); ctx.arc(W/2-9, H/2-22, 5, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(W/2+9, H/2-22, 5, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = '#000';
+  ctx.beginPath(); ctx.arc(W/2-8, H/2-22, 3, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(W/2+10, H/2-22, 3, 0, Math.PI*2); ctx.fill();
+
+  ctx.fillStyle = '#fff';
+  ctx.font = '7px "Press Start 2P"';
+  ctx.fillText('EAT ALL THE FLIES!', W/2, H/2+32);
+  ctx.fillText('AVOID THE PREDATORS!', W/2, H/2+46);
+
+  ctx.fillStyle = Math.floor(frame/20)%2===0 ? '#ffee00' : '#ff8800';
+  ctx.font = '9px "Press Start 2P"';
+  const isMobile = window.matchMedia('(pointer: coarse)').matches;
+  ctx.fillText(isMobile ? 'TAP TO START' : 'PRESS ENTER TO START', W/2, H/2+72);
+
+  ctx.fillStyle = C.textDim;
+  ctx.font = '6px "Press Start 2P"';
+  ctx.fillText('HI-SCORE: ' + hiScore, W/2, H/2+92);
+  ctx.textAlign = 'left';
+}
+
+function drawPause() {
+  ctx.fillStyle = 'rgba(0,5,1,0.75)';
+  ctx.fillRect(0, 0, W, H);
+  ctx.fillStyle = '#39ff14';
+  ctx.shadowColor = '#39ff14'; ctx.shadowBlur = 12;
+  ctx.font = '16px "Press Start 2P"';
+  ctx.textAlign = 'center';
+  ctx.fillText('PAUSED', W/2, H/2);
+  ctx.shadowBlur = 0;
+  ctx.fillStyle = C.textDim;
+  ctx.font = '7px "Press Start 2P"';
+  ctx.fillText('PRESS P TO RESUME', W/2, H/2+24);
+  ctx.textAlign = 'left';
+}
+
+function drawLevelUp() {
+  ctx.fillStyle = 'rgba(0,5,1,0.8)';
+  ctx.fillRect(0, 0, W, H);
+  ctx.fillStyle = '#ffee00';
+  ctx.shadowColor = '#ffee00'; ctx.shadowBlur = 16;
+  ctx.font = '14px "Press Start 2P"';
+  ctx.textAlign = 'center';
+  ctx.fillText('LEVEL ' + level + '!', W/2, H/2);
+  ctx.shadowBlur = 0;
+  ctx.fillStyle = '#39ff14';
+  ctx.font = '7px "Press Start 2P"';
+  ctx.fillText('GET READY...', W/2, H/2+24);
+  ctx.textAlign = 'left';
+}
+
+function drawGameOver() {
+  ctx.fillStyle = 'rgba(0,2,0,0.9)';
+  ctx.fillRect(0, 0, W, H);
+
+  ctx.fillStyle = C.red;
+  ctx.shadowColor = C.red; ctx.shadowBlur = 16;
+  ctx.font = '16px "Press Start 2P"';
+  ctx.textAlign = 'center';
+  ctx.fillText('GAME OVER', W/2, H/2-40);
+  ctx.shadowBlur = 0;
+
+  ctx.fillStyle = '#39ff14';
+  ctx.font = '8px "Press Start 2P"';
+  ctx.fillText('SCORE: ' + score, W/2, H/2);
+  ctx.fillStyle = '#ffee00';
+  ctx.fillText('HI-SCORE: ' + hiScore, W/2, H/2+20);
+
+  if (score >= hiScore && score > 0) {
+    ctx.fillStyle = '#ff8800';
+    ctx.font = '7px "Press Start 2P"';
+    ctx.fillText('NEW RECORD!', W/2, H/2+36);
+  }
+
+  ctx.fillStyle = Math.floor(frame/20)%2===0 ? '#39ff14' : '#1a8a09';
+  ctx.font = '8px "Press Start 2P"';
+  const isM = window.matchMedia('(pointer: coarse)').matches;
+  ctx.fillText(isM ? 'TAP TO RETRY' : 'PRESS ENTER TO RETRY', W/2, H/2+60);
+  ctx.textAlign = 'left';
+}
+
+// ---- MAIN GAME LOOP ----------------------------------------
+function gameLoop() {
+  frame++;
+
+  // Screen shake decay
+  if (shakeDur > 0) {
+    shakeDur--;
+    shakeX = (Math.random()-0.5) * (shakeDur/8) * 3;
+    shakeY = (Math.random()-0.5) * (shakeDur/8) * 3;
+  } else { shakeX = 0; shakeY = 0; }
+
+  ctx.save();
+  ctx.translate(shakeX, shakeY);
+
+  // Background
+  ctx.fillStyle = C.bg;
+  ctx.fillRect(-4, -4, W+8, H+8);
+
+  if (gameState === 'start') {
+    drawMap();
+    drawStart();
+  } else if (gameState === 'gameover') {
+    drawMap();
+    drawGameOver();
+  } else {
+    // Update
+    if (gameState === 'playing') {
+      updatePlayer();
+      updateEnemies();
+      updatePower();
+    } else if (gameState === 'dying') {
+      updatePlayer();
+    } else if (gameState === 'levelup') {
+      levelUpTimer--;
+      if (levelUpTimer <= 0) {
+        initMap();
+        resetPlayer();
+        resetEnemies();
+        powerMode = false;
+        powerTimer = 0;
+        gameState = 'playing';
+      }
+    }
+
+    // Set dying state
+    if (player.dead && gameState === 'playing') gameState = 'dying';
+    if (!player.dead && gameState === 'dying') gameState = 'playing';
+
+    // Draw
+    drawMap();
+    drawPellets();
+    drawDots();
+    drawFrog();
+    drawEnemies();
+    drawPowerBar();
+
+    if (gameState === 'paused')  drawPause();
+    if (gameState === 'levelup') drawLevelUp();
+    if (gameState === 'gameover') drawGameOver();
+  }
+
+  ctx.restore();
+
+  requestAnimationFrame(gameLoop);
+}
+
+// ---- BOOTSTRAP ---------------------------------------------
+updateHUD();
+initMap(); // for start screen background
+
+// Wait for Press Start 2P font before first render to avoid black flash
+document.fonts.ready.then(() => {
+  gameLoop();
+});
+
+// ---- MOBILE D-PAD CONTROLS ---------------------------------
+function pressDir(dx, dy) {
+  // Start game on first tap if on start/gameover screen
+  if (gameState === 'start' || gameState === 'gameover') {
+    startGame();
+    return;
+  }
+  if (gameState === 'paused') { gameState = 'playing'; return; }
+  player.nextDx = dx;
+  player.nextDy = dy;
+}
+
+function bindDpadBtn(id, dx, dy) {
+  const el = document.getElementById(id);
+  // touchstart for instant response
+  el.addEventListener('touchstart', e => { e.preventDefault(); pressDir(dx, dy); }, {passive: false});
+  el.addEventListener('mousedown',  e => { e.preventDefault(); pressDir(dx, dy); });
+}
+
+bindDpadBtn('btn-up',    0, -1);
+bindDpadBtn('btn-down',  0,  1);
+bindDpadBtn('btn-left', -1,  0);
+bindDpadBtn('btn-right', 1,  0);
+
+// Swipe support on the canvas
+let swipeStartX = 0, swipeStartY = 0;
+canvas.addEventListener('touchstart', e => {
+  swipeStartX = e.touches[0].clientX;
+  swipeStartY = e.touches[0].clientY;
+  if (gameState === 'start' || gameState === 'gameover') startGame();
+}, {passive: true});
+
+canvas.addEventListener('touchend', e => {
+  if (gameState !== 'playing') return;
+  const dx = e.changedTouches[0].clientX - swipeStartX;
+  const dy = e.changedTouches[0].clientY - swipeStartY;
+  const minSwipe = 20;
+  if (Math.abs(dx) < minSwipe && Math.abs(dy) < minSwipe) return;
+  if (Math.abs(dx) > Math.abs(dy)) {
+    pressDir(dx > 0 ? 1 : -1, 0);
+  } else {
+    pressDir(0, dy > 0 ? 1 : -1);
+  }
+}, {passive: true});
+</script>
+</body>
+</html>

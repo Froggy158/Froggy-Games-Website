@@ -1,0 +1,1226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
+<title>Calm Pond Simulator 🐸</title>
+<style>
+  /* ─── Reset & Base ─────────────────────────────────────────── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    width: 100%; height: 100%;
+    overflow: hidden;
+    background: #0d1f0f;
+    font-family: 'Georgia', serif;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+    touch-action: none;
+  }
+
+  img { pointer-events: none; user-select: none; -webkit-user-drag: none; }
+
+  canvas {
+    display: block;
+    width: 100%; height: 100%;
+    position: fixed; top: 0; left: 0;
+    cursor: crosshair;
+  }
+
+  /* ─── UI Overlay ────────────────────────────────────────────── */
+  #ui {
+    position: fixed;
+    top: 14px; left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    z-index: 100;
+    flex-wrap: wrap;
+    justify-content: center;
+    padding: 0 12px;
+  }
+
+  .btn {
+    background: rgba(255,255,255,0.08);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255,255,255,0.15);
+    color: rgba(255,255,255,0.85);
+    padding: 7px 13px;
+    border-radius: 20px;
+    font-size: 12px;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+    transition: background 0.2s, border-color 0.2s;
+    outline: none;
+    white-space: nowrap;
+    font-family: inherit;
+  }
+
+  .btn:active { background: rgba(255,255,255,0.18); }
+
+  .btn-home {
+    background: rgba(80,180,80,0.18);
+    border-color: rgba(120,220,100,0.3);
+    color: rgba(180,255,160,0.9);
+    font-size: 13px;
+  }
+
+  .btn-home:active { background: rgba(80,180,80,0.32); }
+
+  .btn.active {
+    background: rgba(120,220,100,0.2);
+    border-color: rgba(120,220,100,0.4);
+    color: rgba(180,255,160,0.95);
+  }
+
+  /* ─── Toast ─────────────────────────────────────────────────── */
+  #toast {
+    position: fixed;
+    bottom: 28px; left: 50%;
+    transform: translateX(-50%) translateY(60px);
+    background: rgba(0,0,0,0.45);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    color: rgba(255,255,255,0.75);
+    padding: 8px 20px;
+    border-radius: 20px;
+    font-size: 12px;
+    letter-spacing: 0.06em;
+    transition: transform 0.4s cubic-bezier(0.34,1.56,0.64,1), opacity 0.4s;
+    opacity: 0;
+    pointer-events: none;
+    z-index: 200;
+    border: 1px solid rgba(255,255,255,0.1);
+  }
+
+  #toast.show {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+  }
+</style>
+</head>
+<body>
+
+<canvas id="pond"></canvas>
+
+<!-- UI -->
+<div id="ui">
+  <button class="btn btn-home" onclick="window.location.href='../index.html'">🏠 Home</button>
+  <button class="btn" id="btnAdd" onclick="addFrog()">＋ Frog</button>
+  <button class="btn" id="btnRemove" onclick="removeFrog()">－ Frog</button>
+  <button class="btn" id="btnNight" onclick="toggleDayNight()">🌙 Night</button>
+  <button class="btn" id="btnSound" onclick="toggleSound()">🔊 Sound</button>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════
+//  CALM POND SIMULATOR
+//  Single-file canvas app — frogs, flies, ripples, peace.
+// ═══════════════════════════════════════════════════════════════
+
+const canvas = document.getElementById('pond');
+const ctx = canvas.getContext('2d');
+
+// ── State ──────────────────────────────────────────────────────
+let W, H;
+let isNight = false;
+let soundOn = false;
+let audioCtx = null;
+let tick = 0;
+let frogs = [];
+let flies = [];
+let lilyPads = [];
+let ripples = [];
+let bubbles = [];
+let particles = [];
+let fireflies = [];
+let reeds = [];
+let waterOff = 0; // wave offset
+
+// ── Palette ────────────────────────────────────────────────────
+const DAY = {
+  sky1: '#87CEEB', sky2: '#c8e8f5',
+  water1: '#2a7a5a', water2: '#1a5c44',
+  waterShimmer: 'rgba(180,240,200,0.18)',
+  lily: '#3a8a40',
+  lilyBorder: '#2a6632',
+  reedBody: '#6b8c4a',
+  reedTop: '#c4a44a',
+  ambient: 'rgba(255,245,200,0.08)',
+  fogColor: 'rgba(200,235,220,0.06)',
+};
+const NIGHT = {
+  sky1: '#0a0e1a', sky2: '#111828',
+  water1: '#0d2a22', water2: '#091a15',
+  waterShimmer: 'rgba(100,200,160,0.12)',
+  lily: '#1e4a22',
+  lilyBorder: '#142e16',
+  reedBody: '#3a4a28',
+  reedTop: '#6a5a2a',
+  ambient: 'rgba(60,80,200,0.07)',
+  fogColor: 'rgba(30,60,80,0.08)',
+};
+let PAL = DAY;
+
+// ── Utility ────────────────────────────────────────────────────
+const rand  = (a, b) => a + Math.random() * (b - a);
+const randI = (a, b) => Math.floor(rand(a, b + 1));
+const lerp  = (a, b, t) => a + (b - a) * t;
+const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+const dist  = (ax, ay, bx, by) => Math.hypot(ax - bx, ay - by);
+
+// ── Resize ─────────────────────────────────────────────────────
+function resize() {
+  W = canvas.width  = window.innerWidth;
+  H = canvas.height = window.innerHeight;
+  buildScene();
+}
+window.addEventListener('resize', resize);
+
+// ── Scene generation ───────────────────────────────────────────
+function buildScene() {
+  lilyPads = [];
+  reeds = [];
+  fireflies = [];
+
+  // Lily pads scattered over lower 75% (water area)
+  const count = Math.floor(W * H / 28000) + 6;
+  for (let i = 0; i < count; i++) {
+    lilyPads.push({
+      x: rand(W * 0.04, W * 0.96),
+      y: rand(H * 0.35, H * 0.92),
+      r: rand(22, 48),
+      angle: rand(0, Math.PI * 2),
+      wobble: rand(0, Math.PI * 2),
+      wobbleSpeed: rand(0.003, 0.009),
+      flowerChance: Math.random() > 0.62,
+      flowerHue: randI(0, 360),
+    });
+  }
+
+  // Reeds around edges
+  const reedCount = Math.floor(W / 60) + 8;
+  for (let i = 0; i < reedCount; i++) {
+    const side = Math.random() < 0.5;
+    reeds.push({
+      x: side ? rand(0, W * 0.18) : rand(W * 0.82, W),
+      y: rand(H * 0.4, H),
+      h: rand(60, 140),
+      sway: rand(0, Math.PI * 2),
+      swaySpeed: rand(0.005, 0.015),
+      thickness: rand(2, 5),
+    });
+  }
+
+  // Fireflies (night)
+  for (let i = 0; i < 30; i++) {
+    fireflies.push({
+      x: rand(0, W), y: rand(H * 0.1, H * 0.7),
+      vx: rand(-0.4, 0.4), vy: rand(-0.3, 0.3),
+      alpha: rand(0, 1),
+      fade: rand(0.005, 0.015),
+      growing: Math.random() > 0.5,
+      r: rand(2, 4),
+    });
+  }
+
+  // Ensure frogs have valid lily pad positions
+  frogs.forEach(f => snapFrogToLily(f));
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  LILY PAD helpers
+// ═══════════════════════════════════════════════════════════════
+function randomLilyPad() {
+  return lilyPads[randI(0, lilyPads.length - 1)];
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  FROG CLASS
+// ═══════════════════════════════════════════════════════════════
+const FROG_COLORS = [
+  { body: '#4a9e5c', belly: '#a8d8a0', spot: '#2d6e3e' },
+  { body: '#5cb870', belly: '#b8e8b0', spot: '#3a8050' },
+  { body: '#7aba6a', belly: '#c8f0b8', spot: '#4a8040' },
+  { body: '#3d8a50', belly: '#90c898', spot: '#235e35' },
+  { body: '#6aaa5e', belly: '#b8e8a8', spot: '#3e7240' },
+  { body: '#50a870', belly: '#a0d8b8', spot: '#306850' },
+  { body: '#8aba5e', belly: '#c8e8a8', spot: '#5a7838' },
+];
+
+const BEHAVIORS = ['lazy', 'active', 'jumper'];
+
+class Frog {
+  constructor() {
+    this.color = FROG_COLORS[randI(0, FROG_COLORS.length - 1)];
+    this.size  = rand(18, 38);
+    this.behavior = BEHAVIORS[randI(0, 2)];
+    this.pad   = randomLilyPad();
+    this.x     = this.pad ? this.pad.x : rand(W * 0.1, W * 0.9);
+    this.y     = this.pad ? this.pad.y : rand(H * 0.4, H * 0.85);
+    this.targetX = this.x;
+    this.targetY = this.y;
+    this.vx = 0; this.vy = 0;
+
+    // Animation state
+    this.state  = 'idle'; // idle | hopping | swimming | tongue | reacting
+    this.stateTimer = 0;
+    this.idleTime   = this.nextIdleTime();
+    this.blinkTimer = rand(2, 5) * 60;
+    this.blinking   = false;
+    this.blinkDuration = 0;
+    this.breathe    = 0; // 0..1 sinusoidal
+    this.squish     = 1; // y scale on land
+    this.squishV    = 0;
+    this.legAngle   = 0;
+    this.tongueProgress = 0; // 0 = retracted, 1 = extended
+    this.tongueTarget   = null;
+    this.tongueDeploy   = false;
+    this.jumpArc    = 0; // current height offset (px) during hop
+    this.jumpArcMax = 0;
+    this.jumpT      = 0; // 0..1 progress
+    this.jumpDuration = 0;
+    this.startX = this.x;
+    this.startY = this.y;
+    this.angle  = 0; // facing direction
+    this.croak   = false;
+    this.croak_t = 0;
+
+    // Look-at cursor
+    this.lookX = this.x;
+    this.lookY = this.y;
+    this.eyeOffX = 0;
+    this.eyeOffY = 0;
+    this.reacting = false;
+    this.reactT   = 0;
+  }
+
+  nextIdleTime() {
+    const base = { lazy: 5, active: 2, jumper: 1.5 }[this.behavior];
+    return rand(base * 0.6, base * 1.4) * 60;
+  }
+
+  // Find nearest fly within range
+  nearestFly(range) {
+    let best = null, bd = range;
+    for (const f of flies) {
+      if (f.caught) continue;
+      const d = dist(this.x, this.y, f.x, f.y);
+      if (d < bd) { bd = d; best = f; }
+    }
+    return best;
+  }
+
+  jumpTo(tx, ty) {
+    if (this.state !== 'idle') return;
+    this.state = 'hopping';
+    this.startX = this.x; this.startY = this.y;
+    this.targetX = tx; this.targetY = ty;
+    this.jumpArcMax = rand(30, 80) * (this.size / 28);
+    this.jumpDuration = rand(30, 55);
+    this.jumpT = 0;
+    this.angle = Math.atan2(ty - this.y, tx - this.x);
+    spawnRipple(this.x, this.y, 8, 0.3);
+    if (soundOn) playRipple(0.08);
+  }
+
+  update() {
+    tick; // reference global tick
+    this.breathe = (Math.sin(tick * 0.04) + 1) / 2;
+
+    // ── Blink ──
+    if (!this.blinking) {
+      this.blinkTimer--;
+      if (this.blinkTimer <= 0) {
+        this.blinking = true;
+        this.blinkDuration = 8;
+        this.blinkTimer = rand(3, 7) * 60;
+      }
+    } else {
+      this.blinkDuration--;
+      if (this.blinkDuration <= 0) this.blinking = false;
+    }
+
+    // ── Squish spring ──
+    this.squishV += (1 - this.squish) * 0.4;
+    this.squishV *= 0.7;
+    this.squish  += this.squishV;
+
+    // ── React timer ──
+    if (this.reacting) {
+      this.reactT--;
+      if (this.reactT <= 0) this.reacting = false;
+    }
+
+    // ── Croak ──
+    if (this.croak) { this.croak_t--; if (this.croak_t <= 0) this.croak = false; }
+
+    // ── State machine ──
+    switch (this.state) {
+      case 'idle': {
+        this.stateTimer++;
+        // Hunt fly
+        if (this.stateTimer % 20 === 0) {
+          const range = this.size * 8;
+          const target = this.nearestFly(range);
+          if (target) {
+            const d = dist(this.x, this.y, target.x, target.y);
+            if (d < this.size * 3.5) {
+              // Tongue
+              this.state = 'tongue';
+              this.tongueTarget = target;
+              this.tongueProgress = 0;
+              this.tongueDeploy = true;
+              this.angle = Math.atan2(target.y - this.y, target.x - this.x);
+              break;
+            } else {
+              // Hop toward fly
+              this.jumpTo(
+                clamp(target.x + rand(-10,10), W*0.04, W*0.96),
+                clamp(target.y + rand(-10,10), H*0.35, H*0.92)
+              );
+              break;
+            }
+          }
+        }
+        if (this.stateTimer >= this.idleTime) {
+          this.stateTimer = 0;
+          this.idleTime = this.nextIdleTime();
+          // Random action
+          const roll = Math.random();
+          if (roll < 0.6 && lilyPads.length > 1) {
+            // Hop to random lily pad
+            let p;
+            let tries = 0;
+            do { p = randomLilyPad(); tries++; } while (p === this.pad && tries < 8);
+            this.pad = p;
+            this.jumpTo(p.x + rand(-8,8), p.y + rand(-6,6));
+          } else if (roll < 0.85) {
+            // Croak
+            this.croak = true;
+            this.croak_t = 40;
+            if (soundOn) playCroak(this.x / W);
+            showToast('🐸 Ribbit!');
+          }
+        }
+        break;
+      }
+      case 'hopping': {
+        this.jumpT += 1 / this.jumpDuration;
+        if (this.jumpT >= 1) { this.jumpT = 1; }
+        const ease = t => t < 0.5 ? 2*t*t : -1+(4-2*t)*t; // easeInOut
+        const et = ease(this.jumpT);
+        this.x = lerp(this.startX, this.targetX, et);
+        this.y = lerp(this.startY, this.targetY, et);
+        this.jumpArc = Math.sin(this.jumpT * Math.PI) * this.jumpArcMax;
+        this.squish = lerp(1, 0.75, Math.sin(this.jumpT * Math.PI));
+        if (this.jumpT >= 1) {
+          this.state = 'idle';
+          this.jumpArc = 0;
+          this.squish = 1.15;
+          spawnRipple(this.x, this.y, 12, 0.4);
+          if (soundOn) playRipple(0.12);
+        }
+        break;
+      }
+      case 'tongue': {
+        if (this.tongueDeploy) {
+          this.tongueProgress += 0.12;
+          if (this.tongueProgress >= 1) {
+            this.tongueProgress = 1;
+            this.tongueDeploy = false;
+            // Catch fly
+            if (this.tongueTarget && !this.tongueTarget.caught) {
+              this.tongueTarget.caught = true;
+              spawnParticles(this.tongueTarget.x, this.tongueTarget.y, '#ffe060', 8);
+              spawnRipple(this.x, this.y, 6, 0.2);
+              if (soundOn) playCatch(this.x / W);
+            }
+          }
+        } else {
+          this.tongueProgress -= 0.15;
+          if (this.tongueProgress <= 0) {
+            this.tongueProgress = 0;
+            this.state = 'idle';
+            this.tongueTarget = null;
+          }
+        }
+        break;
+      }
+    }
+
+    // Eye track toward cursor gently
+    if (!this.reacting) {
+      const ex = Math.atan2(cursorY - this.y, cursorX - this.x);
+      const eyeRange = this.size * 0.18;
+      this.eyeOffX = lerp(this.eyeOffX, Math.cos(ex) * eyeRange, 0.05);
+      this.eyeOffY = lerp(this.eyeOffY, Math.sin(ex) * eyeRange, 0.05);
+    }
+  }
+
+  react() {
+    if (this.state === 'hopping') return;
+    this.reacting = true;
+    this.reactT = 60;
+    this.croak = true;
+    this.croak_t = 50;
+    this.squish = 1.4;
+    if (soundOn) playCroak(this.x / W);
+    showToast('🐸 *croak!*');
+    spawnParticles(this.x, this.y - this.size, '#aaffaa', 6);
+    // Jump away from click
+    const dx = this.x - cursorX, dy = this.y - cursorY;
+    const ang = Math.atan2(dy, dx);
+    const jumpDist = rand(60, 140);
+    const tx = clamp(this.x + Math.cos(ang) * jumpDist, W*0.04, W*0.96);
+    const ty = clamp(this.y + Math.sin(ang) * jumpDist, H*0.35, H*0.92);
+    this.jumpTo(tx, ty);
+  }
+
+  draw() {
+    ctx.save();
+    const yOff = -this.jumpArc;
+    ctx.translate(this.x, this.y + yOff);
+    ctx.rotate(this.state === 'hopping' ? this.angle - Math.PI / 2 : 0);
+    ctx.scale(1, this.squish);
+
+    const s = this.size;
+    const breathScale = 1 + this.breathe * 0.025;
+
+    // ── Shadow on water ──
+    if (this.jumpArc < 2) {
+      ctx.save();
+      ctx.scale(1 / this.squish, 1 / this.squish);
+      ctx.scale(breathScale, breathScale * 0.3);
+      const shadowAlpha = 0.15 + (1 - this.jumpArc / Math.max(this.jumpArcMax, 1)) * 0.1;
+      ctx.fillStyle = `rgba(0,0,0,${shadowAlpha})`;
+      ctx.beginPath();
+      ctx.ellipse(0, s * 1.1, s * 0.85, s * 0.25, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    // ── Back legs ──
+    drawLeg(ctx, s, -0.55, 1, this.color.body, this.state === 'hopping' ? 0.6 : 0.1);
+    drawLeg(ctx, s, 0.55, -1, this.color.body, this.state === 'hopping' ? 0.6 : 0.1);
+
+    // ── Body ──
+    ctx.save();
+    ctx.scale(breathScale, breathScale);
+    ctx.beginPath();
+    ctx.ellipse(0, 0, s * 0.72, s * 0.6, 0, 0, Math.PI * 2);
+    ctx.fillStyle = this.color.body;
+    ctx.fill();
+
+    // Belly
+    ctx.beginPath();
+    ctx.ellipse(0, s * 0.15, s * 0.45, s * 0.35, 0, 0, Math.PI * 2);
+    ctx.fillStyle = this.color.belly;
+    ctx.fill();
+
+    // Spots
+    ctx.fillStyle = this.color.spot;
+    ctx.globalAlpha = 0.5;
+    ctx.beginPath(); ctx.ellipse(-s*0.28, -s*0.15, s*0.12, s*0.09, -0.3, 0, Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse( s*0.28, -s*0.15, s*0.12, s*0.09,  0.3, 0, Math.PI*2); ctx.fill();
+    ctx.globalAlpha = 1;
+    ctx.restore();
+
+    // ── Front legs ──
+    drawFrontLeg(ctx, s, -1, this.color.body);
+    drawFrontLeg(ctx, s,  1, this.color.body);
+
+    // ── Head ──
+    ctx.save();
+    ctx.scale(breathScale, breathScale);
+    ctx.beginPath();
+    ctx.ellipse(0, -s * 0.55, s * 0.62, s * 0.42, 0, 0, Math.PI * 2);
+    ctx.fillStyle = this.color.body;
+    ctx.fill();
+
+    // ── Eyes ──
+    const eyeX = s * 0.3, eyeY = -s * 0.68;
+    for (const ex of [-eyeX, eyeX]) {
+      // Eye dome
+      ctx.beginPath();
+      ctx.ellipse(ex, eyeY, s * 0.2, s * 0.2, 0, 0, Math.PI * 2);
+      ctx.fillStyle = '#e8f8e0';
+      ctx.fill();
+      ctx.strokeStyle = this.color.spot;
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+
+      if (!this.blinking) {
+        // Pupil
+        ctx.beginPath();
+        ctx.ellipse(
+          ex + this.eyeOffX, eyeY + this.eyeOffY,
+          s * 0.1, s * 0.13, 0, 0, Math.PI * 2
+        );
+        ctx.fillStyle = '#1a1a1a';
+        ctx.fill();
+        // Highlight
+        ctx.beginPath();
+        ctx.arc(ex + this.eyeOffX + s*0.04, eyeY + this.eyeOffY - s*0.05, s*0.035, 0, Math.PI*2);
+        ctx.fillStyle = 'rgba(255,255,255,0.85)';
+        ctx.fill();
+      } else {
+        // Blink line
+        ctx.beginPath();
+        ctx.moveTo(ex - s*0.18, eyeY);
+        ctx.lineTo(ex + s*0.18, eyeY);
+        ctx.strokeStyle = this.color.spot;
+        ctx.lineWidth = 3;
+        ctx.stroke();
+      }
+    }
+
+    // ── Mouth / croak bubble ──
+    if (this.croak) {
+      const prog = this.croak_t / 50;
+      ctx.beginPath();
+      ctx.ellipse(0, -s * 0.38, s * 0.22 * prog, s * 0.14 * prog, 0, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(200,240,200,${0.5 * prog})`;
+      ctx.fill();
+      ctx.strokeStyle = `rgba(100,200,100,${0.6 * prog})`;
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+    }
+    ctx.restore();
+
+    // ── Tongue ──
+    if (this.state === 'tongue' && this.tongueTarget) {
+      const tx = this.tongueTarget.x - this.x;
+      const ty = this.tongueTarget.y - (this.y + yOff);
+      const prog = this.tongueProgress;
+      ctx.save();
+      ctx.strokeStyle = '#e05070';
+      ctx.lineWidth = 4;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.moveTo(0, -s * 0.4);
+      ctx.quadraticCurveTo(tx * 0.5, ty * 0.5 - 20, tx * prog, ty * prog);
+      ctx.stroke();
+      // Tongue tip
+      ctx.beginPath();
+      ctx.arc(tx * prog, ty * prog, 5, 0, Math.PI * 2);
+      ctx.fillStyle = '#ff607a';
+      ctx.fill();
+      ctx.restore();
+    }
+
+    ctx.restore();
+  }
+}
+
+function drawLeg(ctx, s, xSign, yFoot, color, extend) {
+  ctx.save();
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  // Thigh
+  ctx.moveTo(xSign * s * 0.5, s * 0.2);
+  ctx.quadraticCurveTo(
+    xSign * s * (0.9 + extend * 0.4),
+    s * (0.5 + extend * 0.25),
+    xSign * s * (0.7 + extend * 0.5),
+    s * (0.8 + extend * 0.3)
+  );
+  ctx.lineWidth = s * 0.22;
+  ctx.strokeStyle = color;
+  ctx.lineCap = 'round';
+  ctx.stroke();
+  // Webbed foot
+  ctx.beginPath();
+  ctx.ellipse(
+    xSign * s * (0.78 + extend * 0.5),
+    s * (0.88 + extend * 0.3),
+    s * 0.22, s * 0.1, xSign * 0.4, 0, Math.PI * 2
+  );
+  ctx.fill();
+  ctx.restore();
+}
+
+function drawFrontLeg(ctx, s, xSign, color) {
+  ctx.save();
+  ctx.strokeStyle = color;
+  ctx.lineWidth = s * 0.18;
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  ctx.moveTo(xSign * s * 0.55, -s * 0.15);
+  ctx.lineTo(xSign * s * 0.78, s * 0.22);
+  ctx.stroke();
+  ctx.restore();
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  FLY CLASS
+// ═══════════════════════════════════════════════════════════════
+class Fly {
+  constructor() {
+    this.reset();
+    this.alpha = 0;
+  }
+  reset() {
+    this.x = rand(W * 0.05, W * 0.95);
+    this.y = rand(H * 0.3, H * 0.85);
+    this.vx = rand(-1.2, 1.2);
+    this.vy = rand(-0.8, 0.8);
+    this.wobble = rand(0, Math.PI * 2);
+    this.wobbleAmp = rand(0.5, 1.5);
+    this.caught = false;
+    this.fadeOut = false;
+    this.alpha = 0;
+    this.life = rand(300, 600);
+  }
+  update() {
+    if (this.caught) {
+      this.alpha = Math.max(0, this.alpha - 0.08);
+      return;
+    }
+    this.life--;
+    if (this.life <= 0) this.fadeOut = true;
+    this.alpha = this.fadeOut
+      ? Math.max(0, this.alpha - 0.03)
+      : Math.min(1, this.alpha + 0.05);
+    this.wobble += 0.08;
+    this.vx += rand(-0.08, 0.08);
+    this.vy += rand(-0.06, 0.06);
+    this.vx = clamp(this.vx, -2, 2);
+    this.vy = clamp(this.vy, -1.5, 1.5);
+    this.x += this.vx + Math.sin(this.wobble) * this.wobbleAmp;
+    this.y += this.vy + Math.cos(this.wobble * 1.3) * this.wobbleAmp * 0.5;
+    this.x = clamp(this.x, W * 0.02, W * 0.98);
+    this.y = clamp(this.y, H * 0.25, H * 0.9);
+  }
+  draw() {
+    if (this.alpha <= 0) return;
+    ctx.save();
+    ctx.globalAlpha = this.alpha * 0.85;
+    ctx.translate(this.x, this.y);
+    // Body
+    ctx.fillStyle = '#555';
+    ctx.beginPath();
+    ctx.ellipse(0, 0, 4, 2.5, 0, 0, Math.PI * 2);
+    ctx.fill();
+    // Wings
+    ctx.fillStyle = 'rgba(200,230,255,0.55)';
+    ctx.beginPath();
+    ctx.ellipse(-4, -2, 6, 3, -0.4, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.ellipse(4, -2, 6, 3, 0.4, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  RIPPLE
+// ═══════════════════════════════════════════════════════════════
+function spawnRipple(x, y, r, strength = 0.5) {
+  ripples.push({ x, y, r, maxR: r + rand(40, 100), alpha: strength, speed: rand(1.2, 2.2) });
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  BUBBLE
+// ═══════════════════════════════════════════════════════════════
+function spawnBubble(x, y) {
+  bubbles.push({ x, y, r: rand(2, 8), vy: rand(-0.5, -1.5), alpha: rand(0.3, 0.7), life: rand(60, 180) });
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  PARTICLES
+// ═══════════════════════════════════════════════════════════════
+function spawnParticles(x, y, color, count) {
+  for (let i = 0; i < count; i++) {
+    const ang = rand(0, Math.PI * 2);
+    const spd = rand(1, 4);
+    particles.push({
+      x, y, vx: Math.cos(ang) * spd, vy: Math.sin(ang) * spd - rand(1,3),
+      r: rand(2, 6), alpha: 1, color,
+    });
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  SOUND ENGINE  (Web Audio API — procedural)
+// ═══════════════════════════════════════════════════════════════
+function initAudio() {
+  if (audioCtx) return;
+  audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  // Ambient loop
+  startAmbient();
+}
+
+function getAudioCtx() {
+  if (!audioCtx) return null;
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+  return audioCtx;
+}
+
+let ambientGain = null;
+function startAmbient() {
+  if (!audioCtx) return;
+  ambientGain = audioCtx.createGain();
+  ambientGain.gain.value = soundOn ? 0.15 : 0;
+  ambientGain.connect(audioCtx.destination);
+  // Noise-based ambient hum
+  scheduleAmbientNoise();
+}
+
+function scheduleAmbientNoise() {
+  if (!audioCtx) return;
+  const bufSize = audioCtx.sampleRate * 3;
+  const buf = audioCtx.createBuffer(1, bufSize, audioCtx.sampleRate);
+  const data = buf.getChannelData(0);
+  for (let i = 0; i < bufSize; i++) data[i] = (Math.random() * 2 - 1) * 0.04;
+  const src = audioCtx.createBufferSource();
+  src.buffer = buf;
+  src.loop = true;
+  const filter = audioCtx.createBiquadFilter();
+  filter.type = 'lowpass';
+  filter.frequency.value = 600;
+  src.connect(filter);
+  filter.connect(ambientGain);
+  src.start();
+  // Crickets
+  for (let i = 0; i < 3; i++) scheduleCricket();
+}
+
+function scheduleCricket() {
+  if (!audioCtx || !soundOn) return;
+  const ac = getAudioCtx();
+  if (!ac) return;
+  const osc = ac.createOscillator();
+  const g = ac.createGain();
+  osc.frequency.value = rand(2800, 4200);
+  osc.type = 'sine';
+  g.gain.value = 0;
+  osc.connect(g);
+  g.connect(ambientGain);
+  const now = ac.currentTime;
+  const delay = rand(0.5, 4);
+  const dur = rand(0.05, 0.15);
+  g.gain.setValueAtTime(0, now + delay);
+  g.gain.linearRampToValueAtTime(0.04, now + delay + 0.01);
+  g.gain.linearRampToValueAtTime(0, now + delay + dur);
+  osc.start(now + delay);
+  osc.stop(now + delay + dur + 0.1);
+  osc.onended = () => { setTimeout(scheduleCricket, rand(200, 2500)); };
+}
+
+function playCroak(pan = 0.5) {
+  const ac = getAudioCtx(); if (!ac) return;
+  const g = ac.createGain();
+  const panner = ac.createStereoPanner();
+  panner.pan.value = (pan - 0.5) * 1.6;
+  g.connect(panner); panner.connect(ac.destination);
+  const now = ac.currentTime;
+  // Layered tones for "ribbit"
+  [[200, 0.12, 0, 0.08], [280, 0.08, 0.04, 0.12], [160, 0.06, 0, 0.18]].forEach(([freq, gain, delay, dur]) => {
+    const osc = ac.createOscillator();
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(freq, now + delay);
+    osc.frequency.exponentialRampToValueAtTime(freq * 0.6, now + delay + dur);
+    const og = ac.createGain();
+    og.gain.setValueAtTime(0, now + delay);
+    og.gain.linearRampToValueAtTime(gain, now + delay + 0.01);
+    og.gain.exponentialRampToValueAtTime(0.001, now + delay + dur);
+    const filter = ac.createBiquadFilter();
+    filter.type = 'bandpass'; filter.frequency.value = freq * 1.5; filter.Q.value = 3;
+    osc.connect(filter); filter.connect(og); og.connect(g);
+    osc.start(now + delay); osc.stop(now + delay + dur + 0.05);
+  });
+}
+
+function playRipple(vol = 0.15) {
+  const ac = getAudioCtx(); if (!ac) return;
+  const bufSize = ac.sampleRate * 0.3;
+  const buf = ac.createBuffer(1, bufSize, ac.sampleRate);
+  const data = buf.getChannelData(0);
+  for (let i = 0; i < bufSize; i++) data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (bufSize * 0.3));
+  const src = ac.createBufferSource(); src.buffer = buf;
+  const g = ac.createGain(); g.gain.value = vol;
+  const filter = ac.createBiquadFilter(); filter.type = 'lowpass'; filter.frequency.value = 1200;
+  src.connect(filter); filter.connect(g); g.connect(ac.destination);
+  src.start();
+}
+
+function playCatch(pan = 0.5) {
+  const ac = getAudioCtx(); if (!ac) return;
+  const osc = ac.createOscillator();
+  const g = ac.createGain();
+  const panner = ac.createStereoPanner(); panner.pan.value = (pan - 0.5) * 1.2;
+  osc.type = 'sine';
+  osc.frequency.setValueAtTime(880, ac.currentTime);
+  osc.frequency.exponentialRampToValueAtTime(440, ac.currentTime + 0.15);
+  g.gain.setValueAtTime(0.18, ac.currentTime);
+  g.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + 0.2);
+  osc.connect(g); g.connect(panner); panner.connect(ac.destination);
+  osc.start(); osc.stop(ac.currentTime + 0.25);
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  RENDER: ENVIRONMENT
+// ═══════════════════════════════════════════════════════════════
+function drawEnvironment() {
+  // Sky / bank
+  const skyGrad = ctx.createLinearGradient(0, 0, 0, H * 0.38);
+  skyGrad.addColorStop(0, PAL.sky1);
+  skyGrad.addColorStop(1, PAL.sky2);
+  ctx.fillStyle = skyGrad;
+  ctx.fillRect(0, 0, W, H * 0.38);
+
+  // Stars at night
+  if (isNight) drawStars();
+
+  // Water
+  const waterGrad = ctx.createLinearGradient(0, H * 0.3, 0, H);
+  waterGrad.addColorStop(0, PAL.water1);
+  waterGrad.addColorStop(1, PAL.water2);
+  ctx.fillStyle = waterGrad;
+  ctx.fillRect(0, H * 0.32, W, H);
+
+  // Water surface shimmer lines
+  for (let i = 0; i < 8; i++) {
+    const y = H * 0.35 + (i / 8) * H * 0.55 + Math.sin(waterOff * 0.7 + i * 0.8) * 3;
+    const shimGrad = ctx.createLinearGradient(0, y, W, y);
+    shimGrad.addColorStop(0, 'transparent');
+    shimGrad.addColorStop(0.3 + Math.sin(waterOff + i) * 0.2, PAL.waterShimmer);
+    shimGrad.addColorStop(1, 'transparent');
+    ctx.fillStyle = shimGrad;
+    ctx.fillRect(0, y, W, 2 + Math.sin(waterOff + i * 0.5) * 1.5);
+  }
+
+  // Shore edge blur
+  const shoreGrad = ctx.createLinearGradient(0, H * 0.28, 0, H * 0.38);
+  shoreGrad.addColorStop(0, isNight ? '#0a1a0d' : '#5a8040');
+  shoreGrad.addColorStop(1, 'transparent');
+  ctx.fillStyle = shoreGrad;
+  ctx.fillRect(0, H * 0.28, W, H * 0.1);
+
+  // Ambient light overlay
+  const amb = ctx.createRadialGradient(W/2, H*0.45, W*0.1, W/2, H*0.45, W*0.7);
+  amb.addColorStop(0, PAL.ambient);
+  amb.addColorStop(1, 'transparent');
+  ctx.fillStyle = amb;
+  ctx.fillRect(0, 0, W, H);
+}
+
+const stars = Array.from({length: 80}, () => ({
+  x: rand(0, 1), y: rand(0, 0.32),
+  r: rand(0.5, 2), twinkle: rand(0, Math.PI*2), speed: rand(0.02, 0.06)
+}));
+function drawStars() {
+  stars.forEach(s => {
+    s.twinkle += s.speed;
+    const a = 0.4 + Math.sin(s.twinkle) * 0.4;
+    ctx.beginPath();
+    ctx.arc(s.x * W, s.y * H, s.r, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(255,255,255,${a})`;
+    ctx.fill();
+  });
+}
+
+function drawMoon() {
+  if (!isNight) return;
+  const mx = W * 0.8, my = H * 0.1;
+  const glow = ctx.createRadialGradient(mx, my, 12, mx, my, 50);
+  glow.addColorStop(0, 'rgba(255,250,200,0.25)');
+  glow.addColorStop(1, 'transparent');
+  ctx.fillStyle = glow;
+  ctx.fillRect(mx - 55, my - 55, 110, 110);
+  ctx.beginPath();
+  ctx.arc(mx, my, 18, 0, Math.PI * 2);
+  ctx.fillStyle = '#fff8d0';
+  ctx.fill();
+}
+
+function drawReeds() {
+  reeds.forEach(r => {
+    r.sway += r.swaySpeed;
+    const swayX = Math.sin(r.sway) * 5;
+    ctx.save();
+    ctx.strokeStyle = PAL.reedBody;
+    ctx.lineWidth = r.thickness;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(r.x, r.y);
+    ctx.quadraticCurveTo(r.x + swayX * 0.5, r.y - r.h * 0.5, r.x + swayX, r.y - r.h);
+    ctx.stroke();
+    // Reed head (cattail)
+    ctx.fillStyle = PAL.reedTop;
+    ctx.beginPath();
+    ctx.ellipse(r.x + swayX, r.y - r.h, r.thickness * 1.5, r.thickness * 4, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  });
+}
+
+function drawLilyPads() {
+  lilyPads.forEach(p => {
+    p.wobble += p.wobbleSpeed;
+    const bob = Math.sin(p.wobble) * 2;
+    ctx.save();
+    ctx.translate(p.x, p.y + bob);
+
+    // Shadow
+    ctx.beginPath();
+    ctx.ellipse(3, 6, p.r * 0.95, p.r * 0.3, 0, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(0,0,0,0.12)';
+    ctx.fill();
+
+    // Pad
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.arc(0, 0, p.r, p.angle + 0.3, p.angle + Math.PI * 2 - 0.3);
+    ctx.closePath();
+    ctx.fillStyle = PAL.lily;
+    ctx.fill();
+    ctx.strokeStyle = PAL.lilyBorder;
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
+    // Veins
+    ctx.strokeStyle = PAL.lilyBorder;
+    ctx.lineWidth = 0.8;
+    ctx.globalAlpha = 0.4;
+    for (let i = 0; i < 6; i++) {
+      const va = p.angle + 0.3 + (i / 6) * (Math.PI * 2 - 0.6);
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.lineTo(Math.cos(va) * p.r * 0.85, Math.sin(va) * p.r * 0.85);
+      ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+
+    // Flower
+    if (p.flowerChance) {
+      const fr = p.r * 0.28;
+      for (let i = 0; i < 6; i++) {
+        const fa = (i / 6) * Math.PI * 2;
+        ctx.beginPath();
+        ctx.ellipse(Math.cos(fa) * fr * 0.6, Math.sin(fa) * fr * 0.6, fr * 0.45, fr * 0.7, fa, 0, Math.PI * 2);
+        ctx.fillStyle = `hsl(${p.flowerHue},70%,75%)`;
+        ctx.fill();
+      }
+      ctx.beginPath();
+      ctx.arc(0, 0, fr * 0.35, 0, Math.PI * 2);
+      ctx.fillStyle = `hsl(${(p.flowerHue + 50) % 360},80%,85%)`;
+      ctx.fill();
+    }
+
+    ctx.restore();
+  });
+}
+
+function drawRipples() {
+  ripples.forEach(r => {
+    r.r += r.speed;
+    r.alpha -= 0.012;
+    ctx.beginPath();
+    ctx.arc(r.x, r.y, r.r, 0, Math.PI * 2);
+    ctx.strokeStyle = `rgba(180,240,210,${r.alpha})`;
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+  });
+  ripples = ripples.filter(r => r.alpha > 0);
+}
+
+function drawBubbles() {
+  bubbles.forEach(b => {
+    b.y += b.vy;
+    b.alpha -= 0.004;
+    b.life--;
+    ctx.beginPath();
+    ctx.arc(b.x + Math.sin(tick * 0.05 + b.r) * 3, b.y, b.r, 0, Math.PI * 2);
+    ctx.strokeStyle = `rgba(200,255,230,${b.alpha})`;
+    ctx.lineWidth = 1;
+    ctx.stroke();
+  });
+  bubbles = bubbles.filter(b => b.alpha > 0 && b.life > 0);
+}
+
+function drawParticles() {
+  particles.forEach(p => {
+    p.x += p.vx; p.y += p.vy;
+    p.vy += 0.1;
+    p.alpha -= 0.04;
+    p.r *= 0.95;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, Math.max(0, p.r), 0, Math.PI * 2);
+    ctx.fillStyle = p.color;
+    ctx.globalAlpha = p.alpha;
+    ctx.fill();
+    ctx.globalAlpha = 1;
+  });
+  particles = particles.filter(p => p.alpha > 0 && p.r > 0.3);
+}
+
+function drawFireflies() {
+  if (!isNight) return;
+  fireflies.forEach(f => {
+    f.x += f.vx + Math.sin(tick * 0.03 + f.r) * 0.5;
+    f.y += f.vy + Math.cos(tick * 0.025 + f.r) * 0.4;
+    if (f.x < 0 || f.x > W) f.vx *= -1;
+    if (f.y < H * 0.1 || f.y > H * 0.75) f.vy *= -1;
+    if (f.growing) { f.alpha += f.fade; if (f.alpha >= 1) f.growing = false; }
+    else { f.alpha -= f.fade; if (f.alpha <= 0) { f.growing = true; f.x = rand(0,W); f.y = rand(H*0.1, H*0.7); } }
+    if (f.alpha <= 0) return;
+    const glow = ctx.createRadialGradient(f.x, f.y, 0, f.x, f.y, f.r * 4);
+    glow.addColorStop(0, `rgba(200,255,100,${f.alpha * 0.8})`);
+    glow.addColorStop(1, 'transparent');
+    ctx.fillStyle = glow;
+    ctx.fillRect(f.x - f.r * 4, f.y - f.r * 4, f.r * 8, f.r * 8);
+    ctx.beginPath();
+    ctx.arc(f.x, f.y, f.r, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(230,255,150,${f.alpha})`;
+    ctx.fill();
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  INTERACTION
+// ═══════════════════════════════════════════════════════════════
+let cursorX = 0, cursorY = 0;
+
+function pointerDown(px, py) {
+  // Hit-test frogs
+  let hit = false;
+  for (const f of frogs) {
+    if (dist(px, py, f.x, f.y) < f.size * 1.4) {
+      f.react();
+      hit = true;
+      break;
+    }
+  }
+  if (!hit) {
+    spawnRipple(px, py, 5, 0.6);
+    for (let i = 0; i < 3; i++) spawnBubble(px + rand(-20,20), py + rand(-10,10));
+    if (soundOn) playRipple(0.18);
+    spawnParticles(px, py, 'rgba(180,240,210,0.8)', 4);
+  }
+}
+
+canvas.addEventListener('pointerdown', e => {
+  e.preventDefault();
+  cursorX = e.clientX; cursorY = e.clientY;
+  pointerDown(e.clientX, e.clientY);
+});
+canvas.addEventListener('pointermove', e => {
+  cursorX = e.clientX; cursorY = e.clientY;
+});
+
+// Prevent context menu
+window.addEventListener('contextmenu', e => e.preventDefault());
+// Prevent scroll
+window.addEventListener('wheel', e => e.preventDefault(), { passive: false });
+window.addEventListener('touchmove', e => e.preventDefault(), { passive: false });
+
+// ═══════════════════════════════════════════════════════════════
+//  CONTROLS
+// ═══════════════════════════════════════════════════════════════
+function addFrog() {
+  if (frogs.length >= 15) { showToast('Pond is full! 🐸'); return; }
+  const f = new Frog();
+  frogs.push(f);
+  showToast(`Frog added! (${frogs.length})`);
+}
+function removeFrog() {
+  if (frogs.length <= 1) { showToast('Need at least 1 frog!'); return; }
+  frogs.pop();
+  showToast(`Frog removed. (${frogs.length})`);
+}
+function toggleDayNight() {
+  isNight = !isNight;
+  PAL = isNight ? NIGHT : DAY;
+  document.getElementById('btnNight').textContent = isNight ? '☀️ Day' : '🌙 Night';
+  document.getElementById('btnNight').classList.toggle('active', isNight);
+  showToast(isNight ? '🌙 Night falls...' : '☀️ Day breaks!');
+}
+function toggleSound() {
+  soundOn = !soundOn;
+  document.getElementById('btnSound').textContent = soundOn ? '🔊 Sound' : '🔇 Mute';
+  document.getElementById('btnSound').classList.toggle('active', soundOn);
+  if (soundOn) {
+    initAudio();
+    if (ambientGain) ambientGain.gain.setTargetAtTime(0.15, audioCtx.currentTime, 0.5);
+    showToast('🔊 Ambient sounds on');
+  } else {
+    if (ambientGain) ambientGain.gain.setTargetAtTime(0, audioCtx.currentTime, 0.5);
+    showToast('🔇 Sounds off');
+  }
+}
+
+function snapFrogToLily(frog) {
+  if (!lilyPads.length) return;
+  frog.pad = randomLilyPad();
+  frog.x = frog.pad.x; frog.y = frog.pad.y;
+  frog.targetX = frog.x; frog.targetY = frog.y;
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  TOAST
+// ═══════════════════════════════════════════════════════════════
+let toastTimer = null;
+function showToast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 2200);
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  MAIN LOOP
+// ═══════════════════════════════════════════════════════════════
+function loop() {
+  requestAnimationFrame(loop);
+  tick++;
+  waterOff += 0.018;
+
+  // Spawn flies occasionally
+  if (tick % 90 === 0 && flies.filter(f => !f.caught && !f.fadeOut).length < 8) {
+    flies.push(new Fly());
+  }
+  // Spawn bubbles occasionally
+  if (tick % 45 === 0) spawnBubble(rand(W*0.1, W*0.9), rand(H*0.45, H*0.9));
+
+  // Update entities
+  flies.forEach(f => f.update());
+  flies = flies.filter(f => f.alpha > 0);
+  frogs.forEach(f => f.update());
+
+  // ── Draw ──
+  ctx.clearRect(0, 0, W, H);
+  drawEnvironment();
+  drawMoon();
+  drawReeds();
+  drawLilyPads();
+  drawRipples();
+  drawBubbles();
+  flies.forEach(f => f.draw());
+  frogs.forEach(f => f.draw());
+  drawParticles();
+  drawFireflies();
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════════════════════════
+resize();
+
+// Spawn initial frogs
+for (let i = 0; i < 7; i++) frogs.push(new Frog());
+
+loop();
+showToast('🐸 Tap water for ripples, tap frogs to say hi!');
+</script>
+</body>
+</html>

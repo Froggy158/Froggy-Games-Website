@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <title>Tap the Frog 🐸</title>
+  <link rel="stylesheet" href="style.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet" />
+</head>
+<body>
+
+  <div class="bg-bubbles" id="bgBubbles"></div>
+
+  <!-- ACHIEVEMENT TOAST -->
+  <div class="achievement-toast" id="achievementToast">
+    <span class="ach-icon">🏆</span>
+    <div class="ach-text">
+      <div class="ach-title" id="achTitle">Achievement!</div>
+      <div class="ach-desc" id="achDesc">You did a thing</div>
+    </div>
+  </div>
+
+  <!-- COMBO -->
+  <div class="combo-display" id="comboDisplay"></div>
+
+  <!-- RAINSTORM OVERLAY -->
+  <div class="rainstorm-overlay" id="rainstormOverlay">
+    <div class="rain-text">🌧️ RAINSTORM! 2x TAPS!</div>
+    <div class="rain-timer" id="rainTimer"></div>
+  </div>
+
+  <!-- ACHIEVEMENTS MODAL (mobile) -->
+  <div class="ach-modal-backdrop" id="achModalBackdrop">
+    <div class="ach-modal">
+      <div class="ach-modal-header">
+        <span>🏆 Achievements</span>
+        <button class="ach-modal-close" id="achModalClose">✕</button>
+      </div>
+      <div class="ach-list" id="achListModal"></div>
+    </div>
+  </div>
+
+  <div class="app">
+
+    <header class="header">
+      <button class="btn-home" onclick="window.location.href='../index.html'">🏠 Home</button>
+      <div class="header-center">
+        <div class="stat-pill">
+          <span class="stat-icon">👆</span>
+          <div>
+            <div class="stat-val" id="totalTaps">0</div>
+            <div class="stat-lbl">Taps</div>
+          </div>
+        </div>
+        <div class="brand">
+          <div class="brand-title">TAP THE FROG</div>
+          <div class="brand-sub">🐸 Ribbit Empire 🐸</div>
+        </div>
+        <div class="stat-pill">
+          <span class="stat-icon">🪙</span>
+          <div>
+            <div class="stat-val" id="totalCoins">0</div>
+            <div class="stat-lbl">Coins</div>
+          </div>
+        </div>
+      </div>
+      <button class="btn-achievements" id="btnAchievements">🏆</button>
+    </header>
+
+    <div class="tps-bar">
+      <span id="tpsDisplay">⚡ 0 taps/sec</span>
+      <span id="cpsDisplay">🪙 0 coins/sec</span>
+      <span id="tpcDisplay">👆 1 tap/click</span>
+    </div>
+
+    <main class="main">
+
+      <!-- LEFT: ACHIEVEMENTS PANEL (desktop only) -->
+      <aside class="achievements-panel" id="achPanel">
+        <div class="panel-title">🏆 Achievements</div>
+        <div class="ach-list" id="achList"></div>
+      </aside>
+
+      <!-- CENTER: FROG ARENA -->
+      <section class="frog-arena">
+        <div class="frog-pond">
+          <div class="pond-ring pond-ring-3"></div>
+          <div class="pond-ring pond-ring-2"></div>
+          <div class="pond-ring pond-ring-1"></div>
+          <div class="lily-pad-deco lp1">🌿</div>
+          <div class="lily-pad-deco lp2">🌺</div>
+          <div class="lily-pad-deco lp3">🌿</div>
+
+          <button class="frog-btn" id="frogBtn" aria-label="Tap the Frog">
+            <div class="frog-shadow"></div>
+            <div class="frog-body" id="frogBody">
+              <div class="frog-emoji" id="frogEmoji">🐸</div>
+              <div class="frog-glow"></div>
+            </div>
+          </button>
+
+          <div class="particles" id="particles"></div>
+        </div>
+
+        <div class="convert-area">
+          <button class="convert-btn" id="convertBtn">
+            <span id="convertLabel">Convert Taps → Coins</span>
+            <span class="convert-ratio" id="convertRatio">10 taps = 1 🪙</span>
+          </button>
+        </div>
+
+        <div class="clone-frogs" id="cloneFrogs"></div>
+      </section>
+
+      <!-- RIGHT: SHOP PANEL -->
+      <aside class="shop-panel">
+        <div class="panel-title">🛒 Frog Shop</div>
+        <div class="shop-items" id="shopItems"></div>
+      </aside>
+
+    </main>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
