@@ -1,0 +1,114 @@
+  /* ===== RESET & BASE ===== */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    width: 100%; height: 100%; overflow: hidden;
+    background: #0a0f0a;
+    font-family: 'Courier New', monospace;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+    touch-action: none;
+  }
+  * { -webkit-user-drag: none; }
+  img { pointer-events: none; user-select: none; -webkit-user-drag: none; }
+
+  /* ===== GAME WRAPPER ===== */
+  #gameWrapper {
+    position: relative;
+    width: 100vw; height: 100vh;
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  canvas {
+    display: block;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+    cursor: none;
+  }
+
+  /* ===== HUD OVERLAY ===== */
+  #hud {
+    position: absolute;
+    top: 0; left: 50%;
+    transform: translateX(-50%);
+    width: var(--cw, 400px);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 12px;
+    pointer-events: none;
+    z-index: 10;
+  }
+
+  #hud .hud-score {
+    color: #7fff7f;
+    font-size: 14px;
+    font-family: 'Courier New', monospace;
+    font-weight: bold;
+    text-shadow: 0 0 8px #00ff44;
+    letter-spacing: 1px;
+  }
+
+  #hud .hud-lives {
+    font-size: 16px;
+    letter-spacing: 2px;
+    filter: drop-shadow(0 0 4px #00ff44);
+  }
+
+  /* ===== HOME BUTTON ===== */
+  #homeBtn {
+    position: absolute;
+    top: 8px;
+    right: 12px;
+    z-index: 20;
+    background: #1a2e1a;
+    border: 2px solid #3a6e3a;
+    color: #7fff7f;
+    font-size: 12px;
+    font-family: 'Courier New', monospace;
+    padding: 5px 10px;
+    cursor: pointer;
+    border-radius: 4px;
+    pointer-events: all;
+    outline: none;
+    box-shadow: 0 0 8px #00441120;
+    -webkit-tap-highlight-color: transparent;
+  }
+  #homeBtn:active { background: #2a4e2a; }
+
+  /* ===== MOBILE CONTROLS ===== */
+  #mobileControls {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: var(--cw, 400px);
+    display: flex;
+    justify-content: space-between;
+    padding: 0 16px;
+    pointer-events: all;
+    z-index: 10;
+    display: none;
+  }
+
+  .mob-btn {
+    background: rgba(0,255,68,0.12);
+    border: 2px solid rgba(0,255,68,0.35);
+    color: #7fff7f;
+    font-size: 26px;
+    width: 72px; height: 64px;
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    outline: none;
+    touch-action: manipulation;
+  }
+  .mob-btn:active { background: rgba(0,255,68,0.28); }
+
+  /* ===== PIXEL FONT HACK ===== */
+  @font-face {
+    font-family: 'PixelFont';
+    src: local('Courier New');
+  }

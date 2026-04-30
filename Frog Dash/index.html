@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Frog Dash</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<button class="btn-home" onclick="window.location.href='../index.html'">🏠 Home</button>
+
+<div id="gameWrapper">
+  <canvas id="gameCanvas"></canvas>
+
+  <!-- START SCREEN -->
+  <div class="overlay" id="startScreen">
+    <div class="frog-emoji">🐸</div>
+    <div class="overlay-title">FROG DASH</div>
+    <div class="divider"></div>
+    <div class="overlay-sub">AUTO-RUN · JUMP · SURVIVE</div>
+    <div class="hi-score-display" id="startHiScore">BEST: 0</div>
+    <div class="overlay-hint">SPACE / TAP → JUMP &nbsp;|&nbsp; DOUBLE JUMP OK<br>P → PAUSE &nbsp;&nbsp;|&nbsp;&nbsp; ENTER → START</div>
+  </div>
+
+  <!-- GAME OVER SCREEN -->
+  <div class="overlay hidden" id="gameOverScreen">
+    <div class="frog-emoji">💀</div>
+    <div class="overlay-title">GAME OVER</div>
+    <div class="divider"></div>
+    <div class="score-display" id="goScore">SCORE: 0</div>
+    <div class="hi-score-display" id="goHiScore">BEST: 0</div>
+    <div class="overlay-hint">ENTER / TAP → RETRY</div>
+  </div>
+
+  <!-- PAUSED SCREEN -->
+  <div class="overlay hidden" id="pauseScreen">
+    <div class="overlay-title">PAUSED</div>
+    <div class="overlay-hint">P / TAP → RESUME</div>
+  </div>
+
+  <!-- Invisible tap layer for mobile -->
+  <button id="tapBtn" aria-label="Jump"></button>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>

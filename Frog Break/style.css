@@ -1,0 +1,178 @@
+@import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@700;900&display=swap');
+
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  background: #061209;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Fredoka One', cursive;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
+  overflow: hidden;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  -webkit-user-drag: none;
+}
+
+#gb {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: #0a1f10;
+  padding: 10px;
+  border-radius: 16px;
+  gap: 0;
+}
+
+/* ── Header ── */
+#hdr {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 420px;
+  padding: 0 4px 8px;
+}
+
+h1 {
+  font-size: 1.5rem;
+  color: #52b788;
+  text-shadow: 0 2px 0 #1b4332, 0 0 18px rgba(82,183,136,0.35);
+}
+
+#sp { display: flex; gap: 7px; }
+
+.sb {
+  background: rgba(82,183,136,0.12);
+  border: 2px solid #52b788;
+  border-radius: 10px;
+  padding: 2px 9px;
+  text-align: center;
+  min-width: 54px;
+}
+
+.sl {
+  font-family: 'Nunito', sans-serif;
+  font-size: 0.55rem;
+  color: #74c69d;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-weight: 900;
+}
+
+.sv { font-size: 1.1rem; color: #fff; }
+
+/* ── Canvas wrap ── */
+#cw {
+  position: relative;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 3px solid #52b788;
+  box-shadow: 0 0 40px rgba(82,183,136,0.25), 0 16px 40px rgba(0,0,0,0.6);
+  cursor: none;
+}
+
+canvas { display: block; }
+
+/* ── Overlay ── */
+#ov {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(8,28,14,0.88);
+  z-index: 20;
+  gap: 9px;
+  padding: 20px;
+  backdrop-filter: blur(3px);
+}
+
+#ov-ti {
+  font-size: 1.9rem;
+  color: #52b788;
+  text-shadow: 0 3px 0 #1b4332;
+  text-align: center;
+}
+
+#ov-su {
+  font-family: 'Nunito', sans-serif;
+  font-size: 0.82rem;
+  color: #b7e4c7;
+  text-align: center;
+  line-height: 1.55;
+  font-weight: 700;
+}
+
+#rb {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  background: rgba(255,255,255,0.06);
+  border: 2px solid rgba(82,183,136,0.35);
+  border-radius: 12px;
+  padding: 8px 24px;
+  gap: 2px;
+}
+
+#rs { font-size: 1.7rem; color: #ffd166; }
+
+#rb2 {
+  font-family: 'Nunito', sans-serif;
+  font-size: 0.8rem;
+  color: #b7e4c7;
+  font-weight: 700;
+}
+
+#pb {
+  background: #52b788;
+  color: #1b4332;
+  border: none;
+  border-radius: 50px;
+  padding: 11px 32px;
+  font-family: 'Fredoka One', cursive;
+  font-size: 1.25rem;
+  cursor: pointer;
+  box-shadow: 0 5px 0 #2d6a4f, 0 8px 20px rgba(0,0,0,0.35);
+  transition: transform 0.1s, box-shadow 0.1s;
+  margin-top: 4px;
+  -webkit-tap-highlight-color: transparent;
+}
+
+#pb:active { transform: translateY(3px);  box-shadow: 0 2px 0 #2d6a4f; }
+
+#hint {
+  font-family: 'Nunito', sans-serif;
+  font-size: 0.72rem;
+  color: #52b788;
+  font-weight: 700;
+  margin-top: 2px;
+}
+
+/* ── Mobile controls ── */
+#mc { display: flex; gap: 14px; margin-top: 10px; }
+
+.mb {
+  width: 80px;
+  height: 50px;
+  background: rgba(82,183,136,0.14);
+  border: 2px solid #52b788;
+  border-radius: 12px;
+  color: #52b788;
+  font-size: 1.3rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.08s, transform 0.07s;
+}
+.mb:active {
+  background: rgba(82,183,136,0.38);
+  transform: scale(0.93);
+}
