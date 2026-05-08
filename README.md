@@ -37,4 +37,4 @@ Create your feature branch.
 
 Open a Pull Request!
 
-Ready to play? Grab the APK right now from the Releases section! 🚀
+Ready to play? Grab the APK or EXE right now from the Releases section! 🚀
